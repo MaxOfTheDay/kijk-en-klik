@@ -67,3 +67,18 @@ async function encode(source, maxEdge, quality) {
   if (!blob) throw new UnreadableImageError("Could not encode image");
   return { blob, width, height };
 }
+
+// A small, throwaway copy of a stored photo for the photo check
+// (src/lib/ai-check.js): long edge 1024px, ~80–200 KB. The stored photo
+// itself is left untouched.
+const CHECK_EDGE = 1024;
+
+export async function checkCopy(blob) {
+  const source = await decode(blob);
+  try {
+    if (!source.width || !source.height) throw new UnreadableImageError("Empty image");
+    return (await encode(source, CHECK_EDGE, 0.8)).blob;
+  } finally {
+    source.close?.();
+  }
+}

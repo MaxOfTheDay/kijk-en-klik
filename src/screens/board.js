@@ -9,6 +9,7 @@ import { getActive, foundCount, recordFind, finishActive } from "../lib/state.js
 import { savePhoto, deletePhotos, newPhotoId, saveDraft, getDraft, clearDraft } from "../lib/photos.js";
 import { processImage, UnreadableImageError } from "../lib/image.js";
 import { pickPhoto } from "../lib/capture.js";
+import { checkChallengePhoto, photoCheckAvailable } from "../lib/ai-check.js";
 import { liveCameraSupported, liveCameraBlocked, checkCameraPermission } from "../lib/camera.js";
 import { go, returnTo } from "../lib/nav.js";
 import { esc, haptic, confirmDialog, reducedMotion } from "../lib/ui.js";
@@ -29,7 +30,7 @@ const TILTS = [-1.4, 1, -0.6, 1.3, -1, 0.7, -1.2, 0.5, -0.8, 1.1, -0.4, 0.9];
 export function mount(root, route, app) {
   const run = getActive();
   const hunt = getHunt(run.huntId);
-  let draft = null; // { challengeId, source: "live" | "picker", full, thumb, width, height, url }
+  let draft = null; // { challengeId, source: "live" | "picker", full, thumb, width, height, url, check }
   let busy = false;
 
   root.innerHTML = `
@@ -229,6 +230,7 @@ export function mount(root, route, app) {
   async function develop(file, source, challengeId, { fromPreview = false } = {}) {
     const processed = await processImage(file);
     if (draft?.url) URL.revokeObjectURL(draft.url);
+    draft?.check?.controller?.abort();
     draft = { huntId: hunt.id, challengeId, source, ...processed, url: URL.createObjectURL(processed.full) };
     // Keep a copy so a refresh on the preview doesn't lose the photo.
     saveDraft({ huntId: hunt.id, challengeId, source, ...processed }).catch(() => {});
@@ -263,18 +265,59 @@ export function mount(root, route, app) {
   // Preview -------------------------------------------------------------------
 
   function renderPreview(c) {
+    startCheck(c);
     preview.innerHTML = `
       <div class="preview__frame">
         <img src="${draft.url}" alt="Voorbeeld van jullie foto bij: ${esc(c.title)}">
       </div>
       <div class="preview__bar">
         <p id="preview-title" class="preview__label">${esc(c.title)}</p>
+        <p class="preview__check" role="status"></p>
         <p class="preview__error" role="alert"></p>
-        <div class="preview__actions">
-          <button class="btn btn--on-dark" data-action="retake">${icon("retake")} Opnieuw</button>
-          <button class="btn btn--primary btn--light" data-action="use">${icon("check")} Deze houden</button>
-        </div>
+        <div class="preview__actions"></div>
       </div>`;
+    renderCheck();
+  }
+
+  // Photo check: a soft second opinion shown on the preview. It runs once per
+  // draft, never disables the buttons, and when there is no answer (offline,
+  // slow, failed) the preview simply stays as it always was.
+  const CHECK_TEXT = {
+    pending: "Even kijken…",
+    YES: "Gevonden!",
+    UNSURE: "Dat zou kunnen! Vind jij dat het telt?",
+    NO: "Hmm… misschien nog even verder zoeken?",
+  };
+
+  function startCheck(c) {
+    if (draft.check || !photoCheckAvailable()) return;
+    const d = draft;
+    const controller = new AbortController();
+    d.check = { state: "pending", controller };
+    checkChallengePhoto({ challenge: c.title, image: d.full, signal: controller.signal }).then((result) => {
+      if (controller.signal.aborted) return;
+      d.check = { state: result ?? "none" };
+      if (draft === d && preview.open) {
+        renderCheck();
+        if (result === "YES") haptic(12);
+      }
+    });
+  }
+
+  function renderCheck() {
+    const state = draft?.check?.state ?? "none";
+    const line = preview.querySelector(".preview__check");
+    line.dataset.state = state;
+    line.innerHTML = CHECK_TEXT[state] ? `${state === "YES" ? icon("check", { size: 18 }) : ""}${esc(CHECK_TEXT[state])}` : "";
+    // Same two buttons in the same places; only the wording, and for a "no"
+    // the emphasis, follows the check. Keeping the photo is always one tap.
+    const [retakeLabel, useLabel] = state === "UNSURE" ? ["Nieuwe foto", "Ja, gebruiken"] : state === "NO" ? ["Opnieuw zoeken", "Toch gebruiken"] : ["Opnieuw", "Deze houden"];
+    const [retakeStyle, useStyle] = state === "NO" ? ["btn--primary btn--light", "btn--on-dark"] : ["btn--on-dark", "btn--primary btn--light"];
+    const actions = preview.querySelector(".preview__actions");
+    actions.classList.toggle("is-even", state === "UNSURE" || state === "NO");
+    actions.innerHTML = `
+      <button class="btn ${retakeStyle}" data-action="retake">${icon("retake")} ${retakeLabel}</button>
+      <button class="btn ${useStyle}" data-action="use">${icon("check")} ${useLabel}</button>`;
   }
 
   function setPreviewError(text) {
@@ -321,6 +364,7 @@ export function mount(root, route, app) {
 
   function discardDraft() {
     if (draft?.url) URL.revokeObjectURL(draft.url);
+    draft?.check?.controller?.abort();
     draft = null;
     clearDraft().catch(() => {});
   }
@@ -534,6 +578,7 @@ export function mount(root, route, app) {
       pendingLand?.disconnect();
       camera.destroy();
       if (draft?.url) URL.revokeObjectURL(draft.url);
+      draft?.check?.controller?.abort();
     },
   };
 }

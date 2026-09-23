@@ -7,7 +7,9 @@ with a recap of the walk.
 The interface and all hunt content are in Dutch. This README is in English for
 developers.
 
-- No accounts, no backend, no uploads. Photos stay on the device.
+- No accounts and no backend of its own. Photos are stored only on the device.
+  The optional photo check (below) sends a reduced copy to an external service
+  for a moment; the app never uploads or stores photos anywhere else.
 - Installable PWA that works offline once it has loaded.
 - Plain HTML, CSS and ES modules. There is no build step and no runtime dependencies.
 
@@ -55,6 +57,7 @@ src/
     state.js             hunt progress (small JSON in localStorage)
     photos.js            photo blobs + unsaved draft (IndexedDB)
     image.js             resize/re-encode photos, fix orientation
+    ai-check.js          optional photo check (endpoint, on/off switch)
     camera.js            live camera stream helpers (getUserMedia)
     capture.js           native "take or choose" file picker (fallback)
     nav.js               tiny hash router with a history "trail"
@@ -112,6 +115,29 @@ in `src/content/icons.js`.
   photos never replaces the last walk: it just ends. Whenever a last walk with
   photos would be replaced, the confirm dialog says so first. On the recap,
   players can press and hold a photo to save it to the phone.
+
+### Photo check
+
+When a photo reaches the preview, `src/lib/ai-check.js` asks an external
+service whether it fits the challenge. The endpoint (`AI_CHECK_ENDPOINT`) and
+an on/off switch (`AI_CHECK_ENABLED`) live at the top of that file; nothing
+else in the app knows which service or model answers.
+
+- It sends `multipart/form-data` to `POST /check`: `challenge` (the challenge
+  title) and `image`, a separate 1024px JPEG copy at quality 0.8 (about
+  80–200 KB, `checkCopy()` in `image.js`). The stored photo is unchanged.
+- The answer is `YES`, `UNSURE` or `NO`. The preview shows "Even kijken…"
+  while waiting, then one line of feedback. The two buttons stay where they
+  are and always work, even while the check runs. Only their wording (and,
+  for `NO`, which one is emphasised) changes:
+  - `YES`: "Gevonden!" (Opnieuw / Deze houden)
+  - `UNSURE`: "Dat zou kunnen! Vind jij dat het telt?" (Nieuwe foto / Ja, gebruiken)
+  - `NO`: "Hmm… misschien nog even verder zoeken?" (Opnieuw zoeken / Toch gebruiken)
+- It is never a gate. Offline, a failed request, a non-2xx reply, a reply
+  that isn't one of the three answers, or no answer within 9 seconds all
+  mean no feedback line: the preview works exactly as without the check.
+- Each photo is checked once; keeping it or taking another cancels a check
+  still in flight.
 
 ### Designed to grow, not built yet
 
