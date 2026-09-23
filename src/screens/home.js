@@ -2,7 +2,7 @@ import { getActive, getLast, foundCount } from "../lib/state.js";
 import { getHunt } from "../content/hunts.js";
 import { icon, trail } from "../content/icons.js";
 import { go } from "../lib/nav.js";
-import { esc, privacyNote } from "../lib/ui.js";
+import { esc } from "../lib/ui.js";
 import { formatDate } from "../lib/recap.js";
 import { hydratePhotos } from "./shared.js";
 
@@ -29,8 +29,6 @@ export function mount(root) {
         </button>`}
 
       ${lastHunt ? lastWalkCard(last, lastHunt) : ""}
-
-      <footer class="home__foot">${privacyNote()}</footer>
     </main>`;
 
   root.addEventListener("click", onClick);

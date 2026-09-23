@@ -1,8 +1,5 @@
 // Small shared UI helpers: escaping, toasts, confirm dialogs, haptics.
 
-import { icon } from "../content/icons.js";
-import { AI_CHECK_ENABLED } from "./ai-check.js";
-
 export function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 }
@@ -54,9 +51,3 @@ export function confirmDialog({ title, body = "", confirm, cancel = "Niet nu" })
   });
 }
 
-export function privacyNote() {
-  const text = AI_CHECK_ENABLED
-    ? "Je foto's blijven op dit toestel. Om mee te kijken gaat er even een verkleinde kopie naar een AI-dienst. Wij bewaren je foto's nergens anders."
-    : "Je foto's blijven op dit toestel. Er wordt niets geüpload.";
-  return `<p class="privacy">${icon("lock", { size: 16 })}<span>${text}</span></p>`;
-}

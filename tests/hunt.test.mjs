@@ -38,9 +38,8 @@ after(async () => {
   server?.close();
 });
 
-// The photo check's external service is never reached from tests. By
-// default it is "unavailable", which must leave the normal flow untouched;
-// the photo check test below answers it on purpose.
+// The speurneus's external service is never reached from tests. By default
+// it is "unavailable"; the speurneus test below answers it on purpose.
 const CHECK_URL = "https://kijk-en-klik-ai.maxheyrman.workers.dev/check";
 
 async function newContext(b, options = {}) {
@@ -55,7 +54,7 @@ function openChallenge(page, title) {
 
 async function accept(page, title) {
   await page.locator("dialog.preview[open] img").waitFor();
-  await page.locator("dialog.preview[open]").getByRole("button", { name: "Deze houden" }).click();
+  await page.locator("dialog.preview[open]").getByRole("button", { name: "Foto gebruiken" }).click();
   await page.locator(".grid .card.is-found", { hasText: title }).waitFor();
   await page.locator("dialog[open]").first().waitFor({ state: "detached" }).catch(() => {});
 }
@@ -352,7 +351,7 @@ test("a new release reaches an open app, without interrupting a capture", async 
   await context.close();
 });
 
-test("the photo check gives soft feedback and never stands in the way", async () => {
+test("the speurneus only looks when asked, and never stands in the way", async () => {
   // Service workers off, so every request to the check service is routed here.
   const context = await newContext(browser, { serviceWorkers: "block" });
   let answer = () => ({ status: 200, body: JSON.stringify({ result: "YES" }) });
@@ -368,8 +367,10 @@ test("the photo check gives soft feedback and never stands in the way", async ()
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   const view = page.locator("dialog.preview[open]");
-  const line = view.locator(".preview__check");
+  const note = view.locator(".scout-note");
   const buttons = () => view.locator(".preview__actions .btn").allInnerTexts().then((t) => t.map((s) => s.trim()));
+  const settled = () => page.locator(".preview[data-scout]:not([data-scout=looking])").waitFor({ timeout: 15_000 });
+  const ask = () => view.locator("[data-action=scout]").click();
 
   async function shoot(title, { library = false } = {}) {
     await openChallenge(page, title);
@@ -394,11 +395,26 @@ test("the photo check gives soft feedback and never stands in the way", async ()
   await page.getByRole("button", { name: /Start een speurtocht/ }).click();
   await page.getByRole("button", { name: /Natuurspeurtocht/ }).click();
 
-  // 1. A clear match: "Gevonden!", and the usual buttons. What was sent is a
-  //    small copy (a 2400×1800 library photo arrives as 1024px) plus the prompt.
+  // Nothing is sent until the player asks; the photo is usable straight away.
   await shoot("groter is dan je hand", { library: true });
-  await line.getByText("Gevonden!").waitFor();
-  assert.deepEqual(await buttons(), ["Opnieuw", "Deze houden"]);
+  await page.waitForTimeout(400);
+  assert.equal(sent.length, 0);
+  assert.equal(await note.innerText(), "");
+  assert.deepEqual(await buttons(), ["Opnieuw", "Foto gebruiken"]);
+
+  // 1. A clear match. Even an instant answer gets a moment of looking, the
+  //    buttons stay usable meanwhile, and what was sent is a small copy
+  //    (a 2400×1800 library photo arrives as 1024px) plus the prompt.
+  const started = Date.now();
+  await ask();
+  await note.getByText("Even speuren…").waitFor();
+  assert.equal(await view.locator(".preview__actions .btn:disabled").count(), 0);
+  await settled();
+  assert.ok(Date.now() - started >= 2000, String(Date.now() - started));
+  assert.equal(await note.locator(".scout-note__title").innerText(), "Gevonden!");
+  assert.equal(await note.locator(".scout-note__text").innerText(), "Die telt helemaal.");
+  assert.deepEqual(await buttons(), ["Opnieuw", "Foto gebruiken"]);
+  assert.equal(await view.locator("[data-action=scout]").count(), 0);
   const { type, body } = sent.at(-1);
   assert.match(type, /^multipart\/form-data/);
   assert.ok(body.includes("Vind een blad dat groter is dan je hand"));
@@ -406,70 +422,70 @@ test("the photo check gives soft feedback and never stands in the way", async ()
   const sof = body.indexOf(Buffer.from([0xff, 0xc0]));
   assert.deepEqual([body.readUInt16BE(sof + 7), body.readUInt16BE(sof + 5)], [1024, 768]);
   assert.ok(body.length < 400_000, String(body.length));
-  await keep("Deze houden", "groter is dan je hand");
+  await keep("Foto gebruiken", "groter is dan je hand");
 
-  // 2. Not a match: a gentle nudge; searching again goes back to the camera,
-  //    and the photo can always be kept anyway.
+  // 2. Not seen: a gentle nudge, and the photo can still be kept. Looking
+  //    again is possible; a borderline answer leaves the choice to the child.
   answer = () => ({ status: 200, body: JSON.stringify({ result: "NO" }) });
   await shoot("kleins dat groeit");
-  await line.getByText("Hmm… misschien nog even verder zoeken?").waitFor();
-  assert.deepEqual(await buttons(), ["Opnieuw zoeken", "Toch gebruiken"]);
-  await view.getByRole("button", { name: "Opnieuw zoeken" }).click();
+  await ask();
+  await settled();
+  assert.equal(await note.locator(".scout-note__title").innerText(), "Hmm… ik zie het nog niet helemaal.");
+  assert.equal(await note.locator(".scout-note__text").innerText(), "Nog eens speuren?");
+  assert.deepEqual(await buttons(), ["Nieuwe foto", "Toch gebruiken"]);
+  answer = () => ({ status: 200, body: JSON.stringify({ result: "UNSURE" }) });
+  await view.getByRole("button", { name: "Nog eens kijken" }).click();
+  await settled();
+  assert.equal(await note.locator(".scout-note__title").innerText(), "Oeh, slim gezien!");
+  assert.equal(await note.locator(".scout-note__text").innerText(), "Dat zou best kunnen.");
+  assert.deepEqual(await buttons(), ["Nieuwe foto", "Foto gebruiken"]);
+  // A new photo starts fresh: no note, no automatic check.
+  const before = sent.length;
+  await view.getByRole("button", { name: "Nieuwe foto" }).click();
   await page.locator("dialog.camera[open] .shutter:not([disabled])").waitFor();
   await page.locator("dialog.camera[open] .shutter").click();
-  await line.getByText("Hmm…", { exact: false }).waitFor();
-  await keep("Toch gebruiken", "kleins dat groeit");
+  await view.locator("[data-action=scout]", { hasText: "Laat de speurneus kijken" }).waitFor();
+  assert.equal(await note.innerText(), "");
+  assert.equal(sent.length, before);
+  await keep("Foto gebruiken", "kleins dat groeit");
 
-  // 3. Borderline: the child decides.
-  answer = () => ({ status: 200, body: JSON.stringify({ result: "UNSURE" }) });
+  // 3. Failures of any kind: a gentle note, the normal buttons, nothing technical.
   await shoot("vreemdste boom");
-  await line.getByText("Dat zou kunnen! Vind jij dat het telt?").waitFor();
-  assert.deepEqual(await buttons(), ["Nieuwe foto", "Ja, gebruiken"]);
-  await keep("Ja, gebruiken", "vreemdste boom");
-
-  // 4. Service unavailable: no feedback at all, the normal preview.
-  answer = () => "abort";
-  await shoot("drie verschillende bladeren");
-  await page.waitForTimeout(300);
-  assert.equal(await line.innerText(), "");
-  assert.deepEqual(await buttons(), ["Opnieuw", "Deze houden"]);
-  await keep("Deze houden", "drie verschillende bladeren");
-
-  // 5. Unexpected replies: an error status, an unknown answer, not JSON.
   const odd = [
-    { status: 500, body: "{}" },
-    { status: 200, body: JSON.stringify({ result: "MAYBE" }) },
-    { status: 200, body: "<html>oops</html>" },
+    () => "abort",
+    () => ({ status: 429, body: "{}" }),
+    () => ({ status: 500, body: "{}" }),
+    () => ({ status: 200, body: JSON.stringify({ result: "MAYBE" }) }),
+    () => ({ status: 200, body: "<html>oops</html>" }),
   ];
   for (const [i, reply] of odd.entries()) {
-    answer = () => reply;
-    const title = ["dier kan wonen", "vogel", "Allemaal een boom"][i];
-    const before = sent.length;
-    await shoot(title);
-    await page.waitForTimeout(300);
-    assert.equal(sent.length, before + 1);
-    assert.equal(await line.innerText(), "", JSON.stringify(reply));
-    assert.deepEqual(await buttons(), ["Opnieuw", "Deze houden"]);
-    await keep("Deze houden", title);
+    answer = reply;
+    await (i === 0 ? ask() : view.getByRole("button", { name: "Nog eens kijken" }).click());
+    await settled();
+    assert.equal(await note.locator(".scout-note__title").innerText(), "De speurneus is even afgeleid.", String(i));
+    assert.equal(await note.locator(".scout-note__text").innerText(), "Je kunt je foto gewoon gebruiken.");
+    assert.deepEqual(await buttons(), ["Opnieuw", "Foto gebruiken"]);
   }
+  await keep("Foto gebruiken", "vreemdste boom");
 
-  // 6. Slow: "Even kijken…" while waiting, buttons usable throughout, and
-  //    after the time limit the preview quietly returns to normal.
-  answer = () => new Promise((r) => setTimeout(() => r({ status: 200, body: JSON.stringify({ result: "NO" }) }), 20_000));
-  await shoot("uitzicht");
-  await line.getByText("Even kijken…").waitFor();
-  assert.equal(await view.locator(".preview__actions .btn:disabled").count(), 0);
-  const started = Date.now();
-  await page.waitForFunction(() => document.querySelector(".preview__check")?.textContent === "", null, { timeout: 15_000 });
-  const waited = Date.now() - started;
-  assert.ok(waited > 6_000 && waited < 12_000, String(waited));
-  assert.deepEqual(await buttons(), ["Opnieuw", "Deze houden"]);
-  await keep("Deze houden", "uitzicht");
-  // Keeping a photo while the check is still running is fine too.
-  await shoot("kleins dat groeit");
-  await line.getByText("Even kijken…").waitFor();
-  await view.getByRole("button", { name: "Deze houden" }).click();
-  await page.locator("dialog.preview[open], dialog.sheet[open]").first().waitFor({ state: "detached" });
+  // 4. Slow: the looking goes on (with a new line now and then), then gives
+  //    up gently after the time limit.
+  answer = () => new Promise((r) => setTimeout(() => r({ status: 200, body: JSON.stringify({ result: "YES" }) }), 20_000));
+  await shoot("dier kan wonen");
+  const slow = Date.now();
+  await ask();
+  await note.getByText("Goed kijken…").waitFor();
+  await settled();
+  const waited = Date.now() - slow;
+  assert.ok(waited > 7_000 && waited < 12_000, String(waited));
+  assert.equal(await note.locator(".scout-note__title").innerText(), "De speurneus is even afgeleid.");
+  await keep("Foto gebruiken", "dier kan wonen");
+
+  // 5. Keeping the photo while the speurneus is still looking is fine.
+  await shoot("vogel");
+  await ask();
+  await note.getByText("Even speuren…").waitFor();
+  await keep("Foto gebruiken", "vogel");
 
   assert.deepEqual(errors, []);
   await context.close();

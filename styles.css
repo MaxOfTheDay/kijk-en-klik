@@ -208,18 +208,6 @@ img {
   max-width: 34ch;
 }
 
-.privacy {
-  font-size: 14px;
-  color: var(--ink-soft);
-  text-align: center;
-  text-wrap: balance;
-}
-.privacy .icon {
-  display: inline;
-  margin-right: 6px;
-  vertical-align: -2px;
-}
-
 /* Buttons ------------------------------------------------------------------ */
 
 .btn {
@@ -349,11 +337,6 @@ img {
   color: var(--accent);
   opacity: 0.8;
 }
-.home__foot {
-  margin-top: auto;
-  padding-top: var(--space-major);
-}
-
 /* The page's main object. It uses the app's own green (not the hunt's
    colour, which belongs to the hunt's own screens). */
 .resume {
@@ -1128,11 +1111,20 @@ dialog::backdrop {
   display: grid;
   place-items: center;
   padding: calc(env(safe-area-inset-top) + 16px) 16px 8px;
+  container-type: size;
 }
-.preview__frame img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+/* The print is sized to the photo itself (contain-fit by hand), so the
+   speurneus can walk over the picture and pin its note to it. */
+.preview__print {
+  position: relative;
+  margin: 0;
+  width: min(100cqw, 100cqh * var(--ratio));
+  aspect-ratio: var(--ratio);
+}
+.preview__print img {
+  display: block;
+  width: 100%;
+  height: 100%;
   border-radius: var(--radius-print);
   animation: develop 0.6s ease both;
 }
@@ -1146,36 +1138,13 @@ dialog::backdrop {
   width: 100%;
   max-width: 560px;
   margin: 0 auto;
-  padding: 12px 20px calc(env(safe-area-inset-bottom) + 20px);
+  padding: 12px 20px calc(env(safe-area-inset-bottom) + 12px);
 }
 .preview__label {
   font: var(--type-prompt-dark);
   text-align: center;
   color: rgb(255 255 255 / 0.85);
-}
-/* The photo check: one quiet line of feedback between the prompt and the
-   buttons. It never looks like an error, whatever the answer. */
-.preview__check {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 24px;
-  margin-top: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  text-align: center;
-  text-wrap: balance;
-  color: rgb(255 255 255 / 0.92);
-  animation: fade-in 0.25s ease;
-}
-.preview__check:empty {
-  display: none;
-}
-.preview__check[data-state="pending"] {
-  font-weight: 500;
-  color: rgb(255 255 255 / 0.7);
-  animation: breathe 1.4s ease-in-out infinite;
+  transition: opacity 0.4s ease;
 }
 .preview__error {
   margin-top: 10px;
@@ -1192,9 +1161,10 @@ dialog::backdrop {
   grid-template-columns: 1fr 1.4fr;
   gap: 10px;
   margin-top: 16px;
+  transition: opacity 0.4s ease;
 }
-/* Longer labels after a check ("Opnieuw zoeken", "Toch gebruiken"): two
-   equal buttons, so on most phones neither label wraps. */
+/* "Nieuwe foto" next to "Toch gebruiken": two equal buttons, so on most
+   phones neither label wraps. */
 .preview__actions.is-even {
   grid-template-columns: 1fr 1fr;
 }
@@ -1202,9 +1172,342 @@ dialog::backdrop {
   gap: 8px;
   padding: 0 12px;
 }
+@media (max-width: 380px) {
+  .preview__actions.is-even .icon {
+    display: none;
+  }
+}
+/* The speurneus invitation sits under the buttons. Its row keeps its height
+   whatever it holds, so the photo never shifts while the speurneus looks. */
+.preview__more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 52px;
+  margin-top: 6px;
+}
 .preview.is-busy .btn {
   opacity: 0.6;
   pointer-events: none;
+}
+/* While the speurneus looks, everything but the photo steps back a little.
+   The buttons stay live: the photo can be kept at any moment. */
+.preview[data-scout="looking"] .preview__actions,
+.preview[data-scout="looking"] .preview__label {
+  opacity: 0.5;
+}
+
+/* De speurneus ------------------------------------------------------------- */
+
+.scout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px 0 14px;
+  border: 1.5px dashed rgb(255 255 255 / 0.3);
+  border-radius: 999px;
+  font: 600 16px/1.2 var(--sans);
+  color: rgb(255 255 255 / 0.92);
+  animation: fade-in 0.4s ease both;
+  transition:
+    background-color 0.2s ease,
+    transform 0.12s ease;
+}
+.scout-btn:active {
+  transform: scale(0.97);
+  background: rgb(255 255 255 / 0.08);
+}
+.scout-btn .icon {
+  color: var(--glint);
+  fill: color-mix(in srgb, var(--glint) 35%, transparent);
+  animation: glint 2.6s ease-in-out 0.9s 2;
+}
+@keyframes glint {
+  0%,
+  60%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: rotate(18deg) scale(1.18);
+  }
+}
+.scout-btn--again {
+  padding: 0 12px;
+  border: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.65);
+  text-decoration: underline;
+  text-decoration-color: rgb(255 255 255 / 0.3);
+  text-underline-offset: 4px;
+}
+
+.preview {
+  /* Warm sunlight for sparkles and the glass: a touch of the hunt's colour. */
+  --glint: color-mix(in srgb, var(--accent) 22%, #ffe9a8);
+}
+
+/* The scene over the photo: a softly dimmed print, a highlight drifting
+   across it, and a magnifying glass wandering from spot to spot, leaving a
+   dotted trail and the odd sparkle where it pauses. One loop is 5s. */
+.scout {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius-print);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+.preview[data-scout="looking"] .scout {
+  opacity: 1;
+}
+.scout::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgb(20 18 15 / 0.08) 40%, rgb(20 18 15 / 0.42) 100%);
+}
+.scout__sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(102deg, transparent 36%, rgb(255 246 220 / 0.16) 50%, transparent 64%);
+  animation: scout-sweep 3.4s ease-in-out infinite;
+}
+@keyframes scout-sweep {
+  from {
+    translate: -100% 0;
+  }
+  to {
+    translate: 100% 0;
+  }
+}
+.scout__route {
+  position: absolute;
+  inset: 0;
+  animation: scout-wander 5s ease-in-out infinite both;
+}
+/* Same points as SCOUT_ROUTE in board.js: rest, then drift to the next. */
+@keyframes scout-wander {
+  0%,
+  6% {
+    translate: 26% 34%;
+  }
+  20%,
+  26% {
+    translate: 66% 27%;
+  }
+  40%,
+  46% {
+    translate: 72% 60%;
+  }
+  60%,
+  66% {
+    translate: 38% 70%;
+  }
+  80%,
+  86% {
+    translate: 30% 48%;
+  }
+  100% {
+    translate: 26% 34%;
+  }
+}
+.scout__glass {
+  position: absolute;
+  left: -26px;
+  top: -26px;
+  width: 64px;
+  height: 64px;
+  color: var(--print);
+  filter: drop-shadow(0 2px 3px rgb(20 18 15 / 0.45));
+  transform-origin: 26px 26px;
+  animation: scout-peer 1.6s ease-in-out infinite alternate;
+}
+@keyframes scout-peer {
+  from {
+    rotate: -7deg;
+  }
+  to {
+    rotate: 6deg;
+  }
+}
+.scout__glass svg {
+  position: absolute;
+  inset: 0;
+}
+/* The lens really does brighten what is under it. */
+.scout__lens {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, rgb(255 255 255 / 0.3), transparent 58%);
+  backdrop-filter: brightness(1.22) saturate(1.2);
+  -webkit-backdrop-filter: brightness(1.22) saturate(1.2);
+}
+.scout__dot,
+.scout__spark {
+  position: absolute;
+  translate: -50% -50%;
+  opacity: 0;
+}
+.scout__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--print);
+  box-shadow: 0 0 0 1px rgb(20 18 15 / 0.15);
+  animation: scout-dot 5s linear calc(var(--at) * 5s) infinite both;
+}
+@keyframes scout-dot {
+  0% {
+    opacity: 0;
+    scale: 0.3;
+  }
+  3% {
+    opacity: 0.9;
+    scale: 1;
+  }
+  28% {
+    opacity: 0.55;
+  }
+  50%,
+  100% {
+    opacity: 0;
+    scale: 0.7;
+  }
+}
+.scout__spark {
+  color: var(--glint);
+  animation: scout-twinkle 5s ease-out calc(var(--at) * 5s) infinite both;
+}
+.scout__spark .icon {
+  display: block;
+  fill: currentColor;
+}
+@keyframes scout-twinkle {
+  0% {
+    opacity: 0;
+    scale: 0.2;
+    rotate: -25deg;
+  }
+  5% {
+    opacity: 1;
+    scale: 1.1;
+  }
+  11% {
+    scale: 1;
+    rotate: 12deg;
+  }
+  20%,
+  100% {
+    opacity: 0;
+    scale: 0.4;
+    rotate: 30deg;
+  }
+}
+
+/* The speurneus's note: a slip of paper pinned to the bottom of the print.
+   Rotating field notes while it looks; its answer afterwards. */
+.scout-note {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: max-content;
+  max-width: calc(100% - 28px);
+  padding: 9px 16px 10px;
+  border-radius: 3px;
+  background: var(--print);
+  color: var(--ink);
+  text-align: center;
+  text-wrap: balance;
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.2),
+    0 12px 24px -12px rgb(0 0 0 / 0.65);
+  transform: translateX(-50%) rotate(-1.5deg);
+  animation: note-pin 0.45s var(--ease-out) both;
+}
+.scout-note:empty {
+  display: none;
+}
+@keyframes note-pin {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px) rotate(-5deg);
+  }
+}
+.scout-note__line {
+  font: var(--type-note);
+  font-size: 17px;
+  color: var(--ink-soft);
+  animation: fade-in 0.6s ease both;
+}
+.scout-note__title {
+  font: 560 19px/1.2 var(--serif);
+  animation: fade-in 0.4s ease both;
+}
+.scout-note__text {
+  margin-top: 2px;
+  font: italic 400 15px/1.3 var(--serif);
+  color: var(--ink-soft);
+  animation: fade-in 0.4s ease 0.1s both;
+}
+/* A "yes" lands with a small bounce, a stamp and a few sparkles: smaller
+   than the celebration of a find, which comes when the photo is kept. */
+.preview[data-scout="YES"] .scout-note.is-fresh {
+  animation: note-hop 0.6s var(--ease-out) both;
+}
+@keyframes note-hop {
+  0% {
+    transform: translateX(-50%) rotate(-1.5deg) scale(0.94);
+  }
+  45% {
+    transform: translate(-50%, -5px) rotate(-3deg) scale(1.04);
+  }
+}
+.scout-note__stamp {
+  position: absolute;
+  left: -11px;
+  top: -11px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--print);
+  box-shadow: 0 0 0 2px var(--print);
+}
+.scout-note.is-fresh .scout-note__stamp {
+  animation: stamp-down 0.35s var(--ease-out) 0.1s both;
+}
+.scout-note__stamp .icon {
+  stroke-width: 2.6;
+}
+/* Small photos (small phones): a smaller note, so it never covers much. */
+@container (max-width: 340px) {
+  .scout-note {
+    padding: 8px 13px 9px;
+  }
+  .scout-note__title {
+    font-size: 17px;
+  }
+  .scout-note__text,
+  .scout-note__line {
+    font-size: 14px;
+  }
+}
+.scout-note__burst {
+  left: 3px;
+  top: 3px;
+}
+.scout-note__burst span {
+  color: var(--glint);
 }
 
 /* In-app camera ------------------------------------------------------------ */
@@ -1761,6 +2064,19 @@ dialog::backdrop {
 /* Motion ------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
+  /* The speurneus holds still: the glass rests on the photo, no trail. */
+  .scout__route {
+    animation: none !important;
+    translate: 50% 46%;
+  }
+  .scout__spark {
+    animation: none !important;
+    opacity: 0.85;
+  }
+  .scout__dot,
+  .scout__sweep {
+    display: none;
+  }
   *,
   *::before,
   *::after {
