@@ -17,7 +17,7 @@ export function mount(root) {
       <header class="home__head">
         <p class="wordmark">${icon("camera", { size: 20 })}<span>Kijk <i>&amp;</i> Klik</span></p>
         <h1 class="home__title">Ga op pad.<br>Kijk goed.<br><em>Klik!</em></h1>
-        <p class="home__lede">Een fotospeurtocht voor het hele gezin. Kies een tocht, ga naar buiten en maak een foto van alles wat je vindt.</p>
+        <p class="home__lede">Kies een speurtocht, ga naar buiten en vind 8 dingen. Maak van elke vondst een foto.</p>
         ${trail({ className: "home__trail", end: "cross" })}
       </header>
 
@@ -57,11 +57,11 @@ function resumeCard(run, hunt) {
     <section class="resume" style="--accent:${hunt.accent}" aria-labelledby="resume-title">
       <p class="eyebrow">${icon("compass", { size: 16 })} Onderweg</p>
       <h2 id="resume-title" class="resume__title">${esc(hunt.title)}</h2>
-      <p class="resume__count">${n === 0 ? `${total} dingen om te vinden` : `${n} van ${total} gevonden`}</p>
+      <p class="resume__count">${n === 0 ? `${total} dingen om te vinden` : `<b>${n}</b> van ${total} gevonden`}</p>
       <div class="strip" aria-hidden="true">${slots}</div>
       <button class="btn btn--primary btn--big" data-go="hunt">Ga verder ${icon("arrow")}</button>
     </section>
-    <button class="btn btn--quiet" data-go="hunts">Andere speurtocht kiezen</button>`;
+    <button class="text-action" data-go="hunts">Andere speurtocht kiezen ${icon("arrow", { size: 18 })}</button>`;
 }
 
 function lastWalkCard(run, hunt) {
@@ -73,10 +73,10 @@ function lastWalkCard(run, hunt) {
     .map((id) => `<img alt="" data-photo-id="${esc(id)}">`)
     .join("");
   return `
-    <button class="lastwalk" style="--accent:${hunt.accent}" data-go="recap">
+    <button class="lastwalk" data-go="recap">
       <span class="lastwalk__photos" aria-hidden="true">${photos || icon(hunt.theme, { size: 28 })}</span>
       <span class="lastwalk__text">
-        <span class="eyebrow">Je laatste tocht</span>
+        <span class="lastwalk__label">Vorige tocht</span>
         <span class="lastwalk__title">${esc(hunt.title)}</span>
         <span class="lastwalk__meta">${n} van ${hunt.challenges.length} · ${formatDate(run.startedAt)}</span>
       </span>

@@ -49,7 +49,7 @@ export function mount(root) {
       const ok = await confirmDialog({
         title: `Beginnen met ${hunt.title}?`,
         body: [
-          `Je ${activeHunt.title} wordt afgerond met ${foundCount(active)} van ${activeHunt.challenges.length} gevonden, en bewaard als je laatste tocht.`,
+          `Je ${activeHunt.title} wordt afgerond met ${foundCount(active)} van ${activeHunt.challenges.length} gevonden, en bewaard als je vorige tocht.`,
           replacedWalkNote(),
         ].join(" ").trim(),
         confirm: "Nieuwe tocht beginnen",
