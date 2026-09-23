@@ -1,9 +1,9 @@
 import { getLast } from "../lib/state.js";
 import { getHunt } from "../content/hunts.js";
-import { icon, trail } from "../content/icons.js";
+import { icon } from "../content/icons.js";
 import { buildRecap } from "../lib/recap.js";
 import { go, returnTo } from "../lib/nav.js";
-import { esc, privacyNote, reducedMotion } from "../lib/ui.js";
+import { esc, reducedMotion } from "../lib/ui.js";
 import { hydratePhotos } from "./shared.js";
 
 // Gentle, fixed tilts so the board feels hand-pinned without looking random.
@@ -14,6 +14,8 @@ export function mount(root, route, app) {
   const recap = buildRecap(run, getHunt(run.huntId));
   const celebrate = app.celebrate && !reducedMotion();
   app.celebrate = false;
+  const complete = recap.found === recap.total;
+  const left = recap.missing.length;
 
   root.innerHTML = `
     <main class="screen recap ${celebrate ? "is-arriving" : ""}" style="--accent:${recap.accent}">
@@ -23,13 +25,14 @@ export function mount(root, route, app) {
 
       <section class="recap__head">
         <div class="stamp-wrap">
-          <p class="stamp">${icon("compass", { size: 18 })} Speurtocht voltooid</p>
+          <p class="stamp ${complete ? "stamp--full" : ""}">${
+            complete ? `${icon("star", { size: 18 })} Alles gevonden!` : `${icon("compass", { size: 18 })} Tocht afgerond`
+          }</p>
           ${celebrate ? burst() : ""}
         </div>
         <h1 class="recap__title">${esc(recap.title)}</h1>
         <p class="recap__meta">${recap.found} van ${recap.total} gevonden · ${esc(recap.dateLabel)}</p>
-        ${recap.found ? `<p class="recap__cheer">${recap.found === recap.total ? "Alles gevonden. Wat een tocht!" : "Mooie vondsten!"}</p>` : ""}
-        ${trail({ className: "recap__trail" })}
+        ${recap.found ? `<p class="recap__cheer">${complete ? "Wat een tocht!" : "Mooie vondsten!"}</p>` : ""}
       </section>
 
       ${recap.items.length ? collage(recap.items) : `
@@ -38,17 +41,12 @@ export function mount(root, route, app) {
           <p>De wandeling telt nog steeds.</p>
         </section>`}
 
-      ${recap.missing.length && recap.items.length ? `
-        <section class="recap__rest">
-          <h2 class="section-label">Nog te vinden, voor een volgende keer</h2>
-          <ul>${recap.missing.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>
-        </section>` : ""}
+      ${left && recap.items.length ? `<p class="recap__rest">Nog ${left} om te vinden, voor een volgende keer</p>` : ""}
 
       <footer class="recap__foot">
         ${recap.items.length ? `<p class="recap__tip">Houd een foto ingedrukt om hem op je telefoon te bewaren.</p>` : ""}
-        <button class="btn btn--primary btn--big" data-go="hunts">Nog een speurtocht ${icon("arrow")}</button>
+        <button class="btn btn--secondary" data-go="hunts">Nog een speurtocht</button>
         <button class="btn btn--quiet" data-action="home">Terug naar start</button>
-        ${privacyNote()}
       </footer>
     </main>`;
 
@@ -72,7 +70,7 @@ function collage(items) {
       <li class="print ${wide ? "print--wide" : ""}" style="--tilt:${TILTS[i % TILTS.length]}deg; --i:${i}">
         <figure>
           <div class="print__photo" data-photo-frame>
-            <img alt="${esc(item.label)}" data-photo-id="${esc(item.photoId)}" data-photo-size="full">
+            <img alt="${esc(item.label)}" loading="lazy" data-photo-id="${esc(item.photoId)}" data-photo-size="full">
           </div>
           <figcaption>${esc(item.label)}</figcaption>
         </figure>

@@ -4,6 +4,14 @@ import { getActive, foundCount, startHunt } from "../lib/state.js";
 import { deletePhotos } from "../lib/photos.js";
 import { go, returnTo } from "../lib/nav.js";
 import { esc, confirmDialog, toast } from "../lib/ui.js";
+import { replacedWalkNote } from "./shared.js";
+
+// Every hunt has the same number of challenges, so it's said once above the
+// list rather than on each card.
+function boardSize() {
+  const sizes = new Set(HUNTS.map((h) => h.challenges.length));
+  return sizes.size === 1 ? [...sizes][0] : "een handvol";
+}
 
 export function mount(root) {
   root.innerHTML = `
@@ -12,7 +20,7 @@ export function mount(root) {
         <button class="icon-btn" data-action="back" aria-label="Terug">${icon("back")}</button>
       </header>
       <h1 class="page-title">Kies een speurtocht</h1>
-      <p class="page-lede">Elke tocht is een bord vol dingen om te vinden. In welke volgorde je maar wilt.</p>
+      <p class="page-lede">Elke tocht is een bord met ${boardSize()} dingen om te vinden. In welke volgorde je maar wilt.</p>
       <ul class="hunt-list">
         ${HUNTS.map(
           (h) => `
@@ -22,7 +30,6 @@ export function mount(root) {
               <span class="hunt-card__body">
                 <span class="hunt-card__title">${esc(h.title)}</span>
                 <span class="hunt-card__desc">${esc(h.description)}</span>
-                <span class="hunt-card__meta">${h.challenges.length} dingen om te vinden</span>
               </span>
               ${icon("arrow", { className: "hunt-card__arrow" })}
             </button>
@@ -41,7 +48,10 @@ export function mount(root) {
     if (activeHunt && foundCount(active) > 0) {
       const ok = await confirmDialog({
         title: `Beginnen met ${hunt.title}?`,
-        body: `Je ${activeHunt.title} wordt afgerond met ${foundCount(active)} van ${activeHunt.challenges.length} gevonden, en bewaard als je laatste tocht.`,
+        body: [
+          `Je ${activeHunt.title} wordt afgerond met ${foundCount(active)} van ${activeHunt.challenges.length} gevonden, en bewaard als je laatste tocht.`,
+          replacedWalkNote(),
+        ].join(" ").trim(),
         confirm: "Nieuwe tocht beginnen",
         cancel: "Huidige tocht houden",
       });

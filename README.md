@@ -73,14 +73,16 @@ Each layer has one job:
 Edit `src/content/hunts.js`. Write prompts in short, natural Dutch that works
 when read aloud to a 5–8 year old. A hunt needs an `id`, `title`, `description`, a
 `theme` (an icon key), an `accent` colour and about 8 `challenges`. The order of
-the challenges sets the pacing and decides what "Try this next" suggests. Don't
+the challenges is the order of the cards on the board. Don't
 rename `id`s after release, because saved progress refers to them. New icons go
 in `src/content/icons.js`.
 
 ### Photos
 
-- **Foto maken** opens an in-app camera (`getUserMedia`, rear camera by
-  default). It shows a 3:4 viewfinder with the prompt on top, a shutter, and a
+- **Foto maken** opens an in-app camera (`getUserMedia`). It asks for the
+  rear camera with `exact` and falls back to a preference when a device can't
+  satisfy that. Every newly opened challenge starts from the rear camera; a
+  switch to the selfie camera lasts only for that challenge's retakes. It shows a 3:4 viewfinder with the prompt on top, a shutter, and a
   button to switch cameras when there is more than one. The saved photo is
   exactly the frame shown in the viewfinder. The stream stops as soon as the
   camera closes or the app goes to the background.
@@ -100,7 +102,9 @@ in `src/content/icons.js`.
 - The app keeps one active hunt and one finished hunt (the "last walk").
   Starting a new hunt while one is in progress moves the old one to "last
   walk", so its photos aren't thrown away. Finishing another hunt replaces the
-  last walk, and any photos no longer referenced are deleted. On the recap,
+  last walk, and any photos no longer referenced are deleted. A hunt without
+  photos never replaces the last walk: it just ends. Whenever a last walk with
+  photos would be replaced, the confirm dialog says so first. On the recap,
   players can press and hold a photo to save it to the phone.
 
 ### Designed to grow, not built yet

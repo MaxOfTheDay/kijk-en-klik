@@ -23,12 +23,24 @@ export async function checkCameraPermission() {
   }
 }
 
+// The rear camera is asked for with `exact`, so a front camera that happens to
+// match the resolution better can't win. Browsers or devices that can't
+// satisfy it (laptops, some older phones) fall back to a preference.
 export async function startStream(facing) {
-  try {
-    return await navigator.mediaDevices.getUserMedia({
+  const request = (facingMode) =>
+    navigator.mediaDevices.getUserMedia({
       audio: false,
-      video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1440 } },
     });
+  try {
+    if (facing === "environment") {
+      try {
+        return await request({ exact: facing });
+      } catch (err) {
+        if (err?.name !== "OverconstrainedError" && err?.name !== "NotFoundError") throw err;
+      }
+    }
+    return await request({ ideal: facing });
   } catch (err) {
     if (err?.name === "NotAllowedError" || err?.name === "SecurityError") blocked = true;
     throw err;
@@ -55,12 +67,15 @@ export function cameraErrorKind(err) {
   return "busy";
 }
 
-// Grabs the current video frame as a JPEG, cropped to the viewfinder's
+// Grabs the current video frame onto a canvas, cropped to the viewfinder's
 // portrait 3:4 frame so the photo matches exactly what was on screen.
 // Frames from getUserMedia are already upright for the current orientation.
+// The canvas goes straight to processImage(), so the frame is only encoded
+// once per stored size (no intermediate full-resolution JPEG).
 export function grabFrame(video, { aspect = 3 / 4, mirror = false } = {}) {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
+  if (!vw || !vh) throw new Error("No video frame");
   let sw = vw;
   let sh = vh;
   if (vw / vh > aspect) sw = Math.round(vh * aspect);
@@ -74,10 +89,5 @@ export function grabFrame(video, { aspect = 3 / 4, mirror = false } = {}) {
     ctx.scale(-1, 1);
   }
   ctx.drawImage(video, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, sw, sh);
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((blob) => {
-      canvas.width = canvas.height = 0;
-      blob ? resolve(blob) : reject(new Error("Frame capture failed"));
-    }, "image/jpeg", 0.92),
-  );
+  return canvas;
 }

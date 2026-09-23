@@ -4,7 +4,7 @@
 //   photo preview    (#/hunt/<id>/photo)   use it or take it again
 
 import { getHunt, getChallenge } from "../content/hunts.js";
-import { icon, trail } from "../content/icons.js";
+import { icon } from "../content/icons.js";
 import { getActive, foundCount, recordFind, finishActive } from "../lib/state.js";
 import { savePhoto, deletePhotos, newPhotoId, saveDraft, getDraft, clearDraft } from "../lib/photos.js";
 import { processImage, UnreadableImageError } from "../lib/image.js";
@@ -12,7 +12,7 @@ import { pickPhoto } from "../lib/capture.js";
 import { liveCameraSupported, liveCameraBlocked, checkCameraPermission } from "../lib/camera.js";
 import { go, returnTo } from "../lib/nav.js";
 import { esc, haptic, confirmDialog, reducedMotion } from "../lib/ui.js";
-import { hydratePhotos } from "./shared.js";
+import { hydratePhotos, replacedWalkNote } from "./shared.js";
 import { createCamera } from "./camera.js";
 
 const CATEGORY_LABEL = {
@@ -39,9 +39,8 @@ export function mount(root, route, app) {
         <span class="topbar__mark" aria-hidden="true">${icon(hunt.theme)}</span>
       </header>
       <section class="board__head" data-part="head"></section>
-      <section class="next" data-part="next"></section>
-      <section class="board__grid" aria-labelledby="grid-title">
-        <h2 id="grid-title" class="section-label">${icon("flag", { size: 15 })} Jullie bord</h2>
+      <section class="next" data-part="next" hidden></section>
+      <section class="board__grid" aria-label="Wat je kunt vinden">
         <ul class="grid">
           ${hunt.challenges.map((c, i) => `<li data-card="${esc(c.id)}">${card(c, i)}</li>`).join("")}
         </ul>
@@ -59,7 +58,7 @@ export function mount(root, route, app) {
   const current = () => sheet.dataset.challenge;
 
   const camera = createCamera(cameraDialog, {
-    onCapture: (blob) => develop(blob, "live", current()),
+    onCapture: (frame) => develop(frame, "live", current()),
     onPick: () => pickAndDevelop(current(), { fromCamera: true }),
     onClose() {
       if (cameraDialog.dataset.quiet) return delete cameraDialog.dataset.quiet;
@@ -109,26 +108,16 @@ export function mount(root, route, app) {
       <ol class="route" aria-hidden="true">${stops}<li class="route__end">${icon("flag", { size: 16 })}</li></ol>`;
   }
 
+  // Only shown once the board is full. Until then the board itself is the
+  // guide: every open card is visible and any of them is a fine next step.
   function renderNext() {
-    const next = hunt.challenges.find((c) => !finds()[c.id]);
     const el = part("next");
-    if (!next) {
-      el.className = "next next--done";
+    el.hidden = hunt.challenges.some((c) => !finds()[c.id]);
+    if (!el.hidden) {
       el.innerHTML = `
-        <p class="eyebrow">${icon("star", { size: 16 })} Alles gevonden</p>
-        <h2 class="next__done-title">Het bord is vol!</h2>
+        <h2 class="next__done-title">${icon("star", { size: 26, className: "next__star" })} Alles gevonden!</h2>
         <button class="btn btn--primary btn--big" data-action="finish">Bekijk jullie vondsten ${icon("arrow")}</button>`;
-      return;
     }
-    el.className = "next";
-    el.innerHTML = `
-      <p class="eyebrow">${icon("compass", { size: 16 })} Probeer deze eens</p>
-      <button class="next__card" data-open="${esc(next.id)}">
-        <span class="next__icon">${icon(next.icon, { size: 32 })}</span>
-        <span class="next__title">${esc(next.title)}</span>
-        <span class="next__cta">Op zoek ${icon("arrow", { size: 18 })}</span>
-        ${trail({ className: "next__trail", end: "cross" })}
-      </button>`;
   }
 
   function renderFoot() {
@@ -141,7 +130,7 @@ export function mount(root, route, app) {
     }
     // Quiet at first; more present once half the board is filled.
     const style = n >= Math.ceil(total / 2) ? "btn--secondary" : "btn--quiet";
-    el.innerHTML = `<button class="btn ${style}" data-action="finish">Speurtocht afronden</button>`;
+    el.innerHTML = `<button class="btn ${style}" data-action="finish">Klaar met zoeken</button>`;
   }
 
   function refreshCard(id) {
@@ -251,12 +240,11 @@ export function mount(root, route, app) {
         <img src="${draft.url}" alt="Voorbeeld van jullie foto bij: ${esc(c.title)}">
       </div>
       <div class="preview__bar">
-        <p class="preview__eyebrow">Voorbeeld</p>
         <p id="preview-title" class="preview__label">${esc(c.title)}</p>
         <p class="preview__error" role="alert"></p>
         <div class="preview__actions">
           <button class="btn btn--on-dark" data-action="retake">${icon("retake")} Opnieuw</button>
-          <button class="btn btn--primary btn--light" data-action="use">${icon("check")} Gebruiken</button>
+          <button class="btn btn--primary btn--light" data-action="use">${icon("check")} Deze houden</button>
         </div>
       </div>`;
   }
@@ -333,6 +321,8 @@ export function mount(root, route, app) {
   });
 
   function ensureSheet(c) {
+    // A challenge opened afresh always starts from the rear camera.
+    if (current() !== c.id) camera.resetFacing();
     // Re-render when the camera turned out to be unavailable in the meantime.
     if (!sheet.open || current() !== c.id || sheet.dataset.live !== String(useLiveCamera())) renderSheet(c);
     if (!sheet.open) sheet.showModal();
@@ -406,12 +396,15 @@ export function mount(root, route, app) {
   async function finish() {
     const n = foundCount(getActive());
     const total = hunt.challenges.length;
-    if (n < total) {
+    const replaced = replacedWalkNote();
+    // A full board goes straight to the recap, unless a saved walk would go.
+    if (n < total || replaced) {
+      const kept = n === 0 ? "Geeft niks. Er komt vast nog een wandeling." : n === 1 ? "Jullie foto gaat in het overzicht." : `Jullie ${n} foto's gaan in het overzicht.`;
       const ok = await confirmDialog({
-        title: n === 0 ? "Afronden zonder vondsten?" : `Afronden met ${n} van ${total} vondsten?`,
-        body: n === 0 ? "Geeft niks. Er komt vast nog een wandeling." : "",
-        confirm: "Afronden",
-        cancel: "Verder zoeken",
+        title: n === total ? "Alles gevonden!" : "Klaar voor vandaag?",
+        body: [n === total ? "" : kept, replaced].join(" ").trim(),
+        confirm: "Klaar!",
+        cancel: n === total ? "Nog niet" : "Verder zoeken",
       });
       if (!ok) return;
     }
@@ -422,6 +415,8 @@ export function mount(root, route, app) {
       return;
     }
     deletePhotos(orphans).catch(() => {});
+    // Nothing found: the empty hunt simply ends; there is no recap to show.
+    if (n === 0) return go("", { replace: true });
     haptic([20, 80, 20, 80, 30]);
     app.celebrate = true;
     go("recap", { replace: true });

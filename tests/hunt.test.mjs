@@ -44,7 +44,7 @@ function openChallenge(page, title) {
 
 async function accept(page, title) {
   await page.locator("dialog.preview[open] img").waitFor();
-  await page.getByRole("button", { name: "Gebruiken" }).click();
+  await page.locator("dialog.preview[open]").getByRole("button", { name: "Deze houden" }).click();
   await page.locator(".grid .card.is-found", { hasText: title }).waitFor();
   await page.locator("dialog[open]").first().waitFor({ state: "detached" }).catch(() => {});
 }
@@ -116,13 +116,16 @@ test("a hunt can be played out of order, resumed, finished early and replayed of
   assert.equal(await page.locator(".grid .card.is-found").count(), 2);
 
   // Finish early.
-  await page.getByRole("button", { name: "Speurtocht afronden" }).click();
-  await assert.doesNotReject(page.getByRole("heading", { name: "Afronden met 2 van 8 vondsten?" }).waitFor());
+  await page.getByRole("button", { name: "Klaar met zoeken" }).click();
+  await assert.doesNotReject(page.getByRole("heading", { name: "Klaar voor vandaag?" }).waitFor());
+  assert.equal(await page.locator("dialog.confirm .confirm__body").innerText(), "Jullie 2 foto's gaan in het overzicht.");
   await page.locator("dialog.confirm button[value=yes]").click();
   await page.getByRole("heading", { name: "Magische speurtocht" }).waitFor();
   assert.match(await page.locator(".recap__meta").innerText(), /^2 van 8 gevonden · /);
   assert.equal(await page.locator(".collage .print").count(), 2);
   await page.locator(".collage img.is-loaded").nth(1).waitFor();
+  assert.equal(await page.locator(".stamp").innerText(), "TOCHT AFGEROND");
+  assert.equal(await page.locator(".recap__rest").innerText(), "Nog 6 om te vinden, voor een volgende keer");
 
   // The replaced photo was cleaned up.
   const left = await page.evaluate(async () => (await (await import("/src/lib/photos.js")).listPhotoIds()).length);
@@ -173,6 +176,119 @@ test("without camera permission, the camera screen offers the native picker inst
   await fresh.locator("dialog.camera[open] .camera__fallback:not([hidden])").waitFor();
   await fresh.getByRole("button", { name: "Camera sluiten" }).click();
   await assert.doesNotReject(fresh.locator("dialog.sheet[open]").getByRole("button", { name: /Foto maken of kiezen/ }).waitFor());
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("every challenge opens on the rear camera; a selfie switch stays with its challenge", async () => {
+  const context = await browser.newContext({ ...devices["Pixel 7"] });
+  // Record what the app asks getUserMedia for.
+  await context.addInitScript(() => {
+    window.__facing = [];
+    const real = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = (c) => {
+      window.__facing.push(JSON.stringify(c.video.facingMode));
+      return real(c);
+    };
+  });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  const lastRequest = () => page.evaluate(() => window.__facing.at(-1));
+  // Everything asked for since the last call. The fake camera has no facing
+  // mode, so the exact rear request fails and the app falls back to a preference.
+  const requests = () => page.evaluate(() => window.__facing.splice(0));
+  const rearFirst = [JSON.stringify({ exact: "environment" }), JSON.stringify({ ideal: "environment" })];
+  const video = page.locator("dialog.camera[open] video");
+
+  await page.goto(BASE);
+  await page.getByRole("button", { name: /Start een speurtocht/ }).click();
+  await page.getByRole("button", { name: /Gekke vondsten/ }).click();
+
+  await openChallenge(page, "gezicht");
+  await page.locator("dialog.sheet[open] [data-action=camera]").click();
+  await page.locator("dialog.camera[open] .shutter:not([disabled])").waitFor();
+  assert.deepEqual(await requests(), rearFirst);
+
+  // Switch to the selfie camera (the fake device has one camera, so the
+  // button stays hidden; click it directly).
+  await page.evaluate(() => document.querySelector("dialog.camera [data-cam=switch]").click());
+  await page.locator("dialog.camera[open] video.is-mirrored").waitFor();
+  await page.locator("dialog.camera[open] .shutter:not([disabled])").waitFor();
+  assert.equal(await lastRequest(), JSON.stringify({ ideal: "user" }));
+
+  // A retake of the same photo keeps the selfie camera.
+  await page.locator("dialog.camera[open] .shutter").click();
+  await page.locator("dialog.preview[open] img").waitFor();
+  await page.getByRole("button", { name: "Opnieuw" }).click();
+  await page.locator("dialog.camera[open] .shutter:not([disabled])").waitFor();
+  assert.equal(await video.evaluate((v) => v.classList.contains("is-mirrored")), true);
+  await page.locator("dialog.camera[open] .shutter").click();
+  await accept(page, "gezicht");
+
+  // The next challenge starts from the rear camera again.
+  await openChallenge(page, "wolk");
+  await requests();
+  await page.locator("dialog.sheet[open] [data-action=camera]").click();
+  await page.locator("dialog.camera[open] .shutter:not([disabled])").waitFor();
+  assert.deepEqual(await requests(), rearFirst);
+  assert.equal(await video.evaluate((v) => v.classList.contains("is-mirrored")), false);
+
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("a saved walk is never replaced by an empty hunt, and never replaced silently", async () => {
+  const context = await browser.newContext({ ...devices["Pixel 7"] });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  const photoCount = () => page.evaluate(async () => (await (await import("/src/lib/photos.js")).listPhotoIds()).length);
+
+  // A finished walk with two photos: play one and finish it.
+  await page.goto(BASE);
+  await page.getByRole("button", { name: /Start een speurtocht/ }).click();
+  await page.getByRole("button", { name: /Kleuren & vormen/ }).click();
+  await captureFromLibrary(page, "ronds");
+  await captureFromLibrary(page, "driehoek");
+  await page.getByRole("button", { name: "Klaar met zoeken" }).click();
+  // Nothing saved yet, so no warning.
+  assert.equal(await page.locator("dialog.confirm .confirm__body").innerText(), "Jullie 2 foto's gaan in het overzicht.");
+  await page.locator("dialog.confirm button[value=yes]").click();
+  await page.locator(".collage .print").first().waitFor();
+  assert.equal(await photoCount(), 2);
+
+  // Start a new hunt and finish it without finds: the saved walk survives.
+  await page.getByRole("button", { name: /Nog een speurtocht/ }).click();
+  await page.getByRole("button", { name: /Natuurspeurtocht/ }).click();
+  await page.getByRole("button", { name: "Klaar met zoeken" }).click();
+  assert.equal(await page.locator("dialog.confirm").getByText("verdwijnt").count(), 0);
+  await page.locator("dialog.confirm button[value=yes]").click();
+  await page.locator(".lastwalk", { hasText: "Kleuren & vormen" }).waitFor();
+  assert.match(await page.locator(".lastwalk__meta").innerText(), /^2 van 8/);
+  assert.equal(await photoCount(), 2);
+
+  // With a find of its own, switching hunts says the saved walk will go.
+  await page.getByRole("button", { name: /Start een speurtocht/ }).click();
+  await page.getByRole("button", { name: /Natuurspeurtocht/ }).click();
+  await captureFromLibrary(page, "vreemdste boom");
+  await page.getByRole("button", { name: "Terug naar start" }).click();
+  await page.getByRole("button", { name: "Andere speurtocht kiezen" }).click();
+  await page.getByRole("button", { name: /Gekke vondsten/ }).click();
+  await assert.doesNotReject(
+    page.locator("dialog.confirm").getByText("Je vorige tocht, Kleuren & vormen, verdwijnt dan van dit toestel, met alle 2 foto's.").waitFor(),
+  );
+  await page.locator("dialog.confirm button[value=no]").click();
+
+  // Finishing says so too, and only then replaces it.
+  await page.getByRole("button", { name: "Terug" }).click();
+  await page.getByRole("button", { name: /Ga verder/ }).click();
+  await page.getByRole("button", { name: "Klaar met zoeken" }).click();
+  await assert.doesNotReject(page.locator("dialog.confirm").getByText(/Kleuren & vormen, verdwijnt dan/).waitFor());
+  await page.locator("dialog.confirm button[value=yes]").click();
+  await page.getByRole("heading", { name: "Natuurspeurtocht" }).waitFor();
+  await page.waitForFunction(async () => (await (await import("/src/lib/photos.js")).listPhotoIds()).length === 1);
+
   assert.deepEqual(errors, []);
   await context.close();
 });

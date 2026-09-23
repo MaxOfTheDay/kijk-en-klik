@@ -124,10 +124,10 @@ export function createCamera(dialog, { onCapture, onPick, onClose }) {
     flash.classList.add("is-on");
     haptic(15);
     try {
-      const blob = await grabFrame(video, { mirror: facing === "user" });
+      const frame = grabFrame(video, { mirror: facing === "user" });
       video.pause(); // hold the frame while the photo develops
       setStatus("Foto wordt ontwikkeld…");
-      await onCapture(blob);
+      await onCapture(frame);
     } catch {
       setStatus("Dat lukte niet. Probeer het nog eens.");
       video.play().catch(() => {});
@@ -180,6 +180,12 @@ export function createCamera(dialog, { onCapture, onPick, onClose }) {
       render(challenge);
       if (!dialog.open) dialog.showModal();
       showFallback(kind);
+    },
+    // Back to the rear camera. The board calls this whenever a challenge is
+    // opened afresh, so a selfie switch only lasts for that challenge (a
+    // retake from the preview keeps it).
+    resetFacing() {
+      facing = "environment";
     },
     // A photo is being developed from the picker: keep the layer calm.
     setStatus,
