@@ -277,8 +277,7 @@ img {
 }
 /* The hero reads as one block: brand, proposition, explanation, route. */
 .home__head {
-  padding-top: 12px;
-  margin-bottom: 6px;
+  padding-top: 4px;
 }
 .wordmark {
   display: flex;
@@ -292,12 +291,15 @@ img {
   font-weight: 500;
   color: var(--accent);
 }
+/* On home the hero is the personality, not the main content: a size down
+   from the shared display style (which the recap keeps), set tight. */
 .home__title {
   font: var(--type-display);
-  line-height: 0.95;
+  font-size: clamp(30px, 8.5vw, 39px);
+  line-height: 0.94;
   font-variation-settings: "SOFT" 60;
-  letter-spacing: -0.025em;
-  margin: 24px 0 12px;
+  letter-spacing: -0.02em;
+  margin: 18px 0 6px;
 }
 .home__title em {
   font-style: italic;
@@ -305,16 +307,19 @@ img {
   color: var(--accent);
 }
 .home__lede {
-  font-size: 18px;
+  font-size: 17px;
+  line-height: 1.4;
   color: var(--ink-soft);
-  max-width: 30ch;
+  max-width: 32ch;
+  text-wrap: balance;
 }
 /* A small route from where you are to the X: the expedition, in miniature. */
 .home__trail {
   display: block;
   width: min(100%, 176px);
   height: auto;
-  margin-top: 10px;
+  /* The drawing sits in the middle of its box; trim the empty band around it. */
+  margin: 2px 0 -4px;
   color: var(--accent);
   opacity: 0.8;
 }

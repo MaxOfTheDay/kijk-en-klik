@@ -17,7 +17,7 @@ export function mount(root) {
       <header class="home__head">
         <p class="wordmark">${icon("camera", { size: 20 })}<span>Kijk <i>&amp;</i> Klik</span></p>
         <h1 class="home__title">Ga op pad.<br>Kijk goed.<br><em>Klik!</em></h1>
-        <p class="home__lede">Kies een speurtocht, ga naar buiten en vind 8 dingen. Maak van elke vondst een foto.</p>
+        <p class="home__lede">Kies een speurtocht en vind 8 dingen om te fotograferen.</p>
         ${trail({ className: "home__trail", end: "cross" })}
       </header>
 
