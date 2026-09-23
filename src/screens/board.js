@@ -36,15 +36,10 @@ export function mount(root, route, app) {
     <main class="screen board" style="--accent:${hunt.accent}">
       <header class="topbar">
         <button class="icon-btn" data-action="home" aria-label="Terug naar start">${icon("back")}</button>
-        <span class="topbar__mark" aria-hidden="true">${icon(hunt.theme)}</span>
       </header>
       <section class="board__head" data-part="head"></section>
       <section class="next" data-part="next" hidden></section>
-      <section class="board__grid" aria-label="Wat je kunt vinden">
-        <ul class="grid">
-          ${hunt.challenges.map((c, i) => `<li data-card="${esc(c.id)}">${card(c, i)}</li>`).join("")}
-        </ul>
-      </section>
+      <div data-part="cards"></div>
       <footer class="board__foot" data-part="foot"></footer>
     </main>
     <dialog class="sheet" style="--accent:${hunt.accent}" aria-labelledby="sheet-title"></dialog>
@@ -80,7 +75,7 @@ export function mount(root, route, app) {
       return `
         <button class="card is-found" data-open="${esc(c.id)}" data-photo-frame style="--tilt:${TILTS[i % TILTS.length]}deg">
           <img class="card__photo" alt="" data-photo-id="${esc(find.photoId)}">
-          <span class="card__stamp" aria-hidden="true">${icon("check", { size: 16 })}</span>
+          <span class="card__stamp" aria-hidden="true">${icon("check", { size: 13 })}</span>
           <span class="card__label"><span class="card__title">${esc(c.title)}</span></span>
           <span class="visually-hidden">— gevonden</span>
         </button>`;
@@ -95,17 +90,38 @@ export function mount(root, route, app) {
       </button>`;
   }
 
+  // Progress is a count, not a position: the first n stops fill, whichever
+  // challenges were found, so it never suggests which one comes next.
   function renderHead() {
     const n = foundCount(getActive());
     const total = hunt.challenges.length;
-    const stops = hunt.challenges.map((c) => `<li class="${finds()[c.id] ? "is-found" : ""}"></li>`).join("");
+    const stops = hunt.challenges.map((_, i) => `<li class="${i < n ? "is-found" : ""}"></li>`).join("");
     part("head").innerHTML = `
-      <p class="eyebrow">${esc(hunt.title)}</p>
+      <p class="eyebrow">${icon(hunt.theme, { size: 16 })} ${esc(hunt.title)}</p>
       <h1 class="board__count" aria-live="polite">
         ${n === 0 ? `${total} dingen om te vinden` : `<span class="board__n">${n}</span> van ${total} gevonden`}
       </h1>
-      ${n === 0 ? `<p class="board__lede">Begin waar je wilt. Het bord vult zich met jullie foto's.</p>` : ""}
       <ol class="route" aria-hidden="true">${stops}<li class="route__end">${icon("flag", { size: 16 })}</li></ol>`;
+  }
+
+  // Two groups, each in challenge order: what is still open to choose from,
+  // then what has been found. Neither order implies a "next" challenge.
+  function renderCards() {
+    const open = [];
+    const found = [];
+    hunt.challenges.forEach((c, i) => (finds()[c.id] ? found : open).push(`<li data-card="${esc(c.id)}">${card(c, i)}</li>`));
+    part("cards").innerHTML = `
+      ${open.length ? `
+        <section class="board__group" aria-labelledby="open-title">
+          <h2 id="open-title" class="group-note">Kies wat je wilt zoeken</h2>
+          <ul class="grid">${open.join("")}</ul>
+        </section>` : ""}
+      ${found.length ? `
+        <section class="board__group board__group--found" aria-labelledby="found-title">
+          <h2 id="found-title" class="group-note">Jullie vondsten <span class="group-note__count">· ${found.length}</span></h2>
+          <ul class="grid grid--found">${found.join("")}</ul>
+        </section>` : ""}`;
+    hydratePhotos(part("cards"));
   }
 
   // Only shown once the board is full. Until then the board itself is the
@@ -133,17 +149,10 @@ export function mount(root, route, app) {
     el.innerHTML = `<button class="btn ${style}" data-action="finish">Klaar met zoeken</button>`;
   }
 
-  function refreshCard(id) {
-    const li = root.querySelector(`[data-card="${CSS.escape(id)}"]`);
-    const index = hunt.challenges.findIndex((c) => c.id === id);
-    li.innerHTML = card(hunt.challenges[index], index);
-    return li;
-  }
-
   renderHead();
   renderNext();
+  renderCards();
   renderFoot();
-  hydratePhotos(root);
 
   // Challenge sheet ---------------------------------------------------------
 
@@ -373,21 +382,29 @@ export function mount(root, route, app) {
     if (app.justFound) celebrateFind(app.justFound);
   }
 
+  // The photo settles into the collection, and the collection's count and
+  // the progress route both tick up, so the gain is visible wherever the
+  // player is on the page.
   function celebrateFind(id) {
     app.justFound = null;
-    const li = refreshCard(id);
+    const wasNew = !root.querySelector(`.grid--found [data-card="${CSS.escape(id)}"]`);
     renderHead();
     renderNext();
+    renderCards();
     renderFoot();
-    const btn = li.querySelector(".card");
+    const btn = root.querySelector(`[data-card="${CSS.escape(id)}"] .card`);
     btn.classList.add("is-new");
     const head = root.querySelector(".board__head");
     head.classList.add("is-updated");
-    const index = hunt.challenges.findIndex((c) => c.id === id);
-    head.querySelectorAll(".route li")[index]?.classList.add("is-new");
-    hydratePhotos(li);
-    btn.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
-    btn.focus({ preventScroll: true });
+    if (wasNew) {
+      head.querySelectorAll(".route li")[foundCount(getActive()) - 1]?.classList.add("is-new");
+      root.querySelector(".group-note__count")?.classList.add("is-new");
+    }
+    // Next frame: the layers above have only just closed and unlocked scrolling.
+    requestAnimationFrame(() => {
+      btn.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
+      btn.focus({ preventScroll: true });
+    });
     setTimeout(() => head.classList.remove("is-updated"), 1200);
   }
 
