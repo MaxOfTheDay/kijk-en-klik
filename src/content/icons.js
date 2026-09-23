@@ -50,6 +50,20 @@ const PATHS = {
   retake: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/>',
 };
 
+// Optical size: some glyphs cover much less of the 24px grid than others
+// (a thumb vs. a sun), so at one size they read lighter. Measured from each
+// icon's footprint and stroke ink; applied as a scale, so layout doesn't move.
+const OPTICAL = {
+  burrow: 1.2, sprout: 1.2, thumb: 1.2, feather: 1.18, stick: 1.18, leaf: 1.14, cloud: 1.14,
+  hat: 1.1, wonky: 1.1, dragon: 1.08, heart: 1.08, circle: 1.06, people: 1.06, tree: 1.05,
+  wand: 1.05, moon: 1.04, horizon: 1.03, triangle: 1.02,
+  door: 0.97, star: 0.97, question: 0.95, palette: 0.95, sun: 0.94, arch: 0.93,
+};
+
+export function opticalScale(name) {
+  return OPTICAL[name] ?? 1;
+}
+
 export function icon(name, { size = 24, label = "", className = "" } = {}) {
   const body = PATHS[name] ?? PATHS.star;
   const a11y = label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"';

@@ -4,7 +4,7 @@
 //   photo preview    (#/hunt/<id>/photo)   use it or take it again
 
 import { getHunt, getChallenge } from "../content/hunts.js";
-import { icon } from "../content/icons.js";
+import { icon, opticalScale } from "../content/icons.js";
 import { getActive, foundCount, recordFind, finishActive } from "../lib/state.js";
 import { savePhoto, deletePhotos, newPhotoId, saveDraft, getDraft, clearDraft } from "../lib/photos.js";
 import { processImage, UnreadableImageError } from "../lib/image.js";
@@ -33,6 +33,13 @@ export function mount(root, route, app) {
   let busy = false;
 
   root.innerHTML = `
+    <div class="board__bar" data-part="bar" style="--accent:${hunt.accent}" aria-hidden="true">
+      <div class="board__bar-inner">
+        <button class="icon-btn" data-action="home" aria-label="Terug naar start" tabindex="-1">${icon("back")}</button>
+        <span class="board__bar-title">${esc(hunt.title)}</span>
+        <span class="board__bar-count" data-part="bar-count"></span>
+      </div>
+    </div>
     <main class="screen board" style="--accent:${hunt.accent}">
       <header class="topbar">
         <button class="icon-btn" data-action="home" aria-label="Terug naar start">${icon("back")}</button>
@@ -81,7 +88,7 @@ export function mount(root, route, app) {
     }
     return `
       <button class="card" data-open="${esc(c.id)}">
-        <span class="card__icon" aria-hidden="true">${icon(c.icon, { size: 38 })}</span>
+        <span class="card__icon" aria-hidden="true" style="--optical:${opticalScale(c.icon)}">${icon(c.icon, { size: 38 })}</span>
         <span class="card__title">${esc(c.title)}</span>
         ${c.type === "together" ? `<span class="card__tag">Samen</span>` : ""}
         <span class="visually-hidden">— nog niet gevonden</span>
@@ -99,7 +106,8 @@ export function mount(root, route, app) {
       <h1 class="board__count" aria-live="polite">
         ${n === 0 ? `${total} dingen om te vinden` : `<span class="board__n">${n}</span> van ${total} gevonden`}
       </h1>
-      <ol class="route" aria-hidden="true">${stops}<li class="route__end">${icon("flag", { size: 16 })}</li></ol>`;
+      <ol class="route" aria-hidden="true" style="--fill:${n ? (n - 1) / total : 0}">${stops}<li class="route__end">${icon("flag", { size: 16 })}</li></ol>`;
+    part("bar-count").textContent = `${n}/${total}`;
   }
 
   // Two groups, each in challenge order: what is still open to choose from,
@@ -139,18 +147,32 @@ export function mount(root, route, app) {
     const total = hunt.challenges.length;
     const el = part("foot");
     if (n === total) {
+      el.classList.remove("is-sticky");
       el.innerHTML = "";
       return;
     }
-    // Quiet at first; more present once half the board is filled.
-    const style = n >= Math.ceil(total / 2) ? "btn--secondary" : "btn--quiet";
-    el.innerHTML = `<button class="btn ${style}" data-action="finish">Klaar met zoeken</button>`;
+    // Quiet while nothing is found; once there is something to keep, it
+    // stays within reach at the bottom of the screen while scrolling.
+    el.classList.toggle("is-sticky", n > 0);
+    el.innerHTML = `<button class="btn ${n > 0 ? "btn--pill" : "btn--quiet"}" data-action="finish">Klaar met zoeken</button>`;
   }
 
   renderHead();
   renderNext();
   renderCards();
   renderFoot();
+
+  // A compact bar (back, hunt, n/total) appears only once the rich header
+  // has scrolled out of view, so orientation is never more than a glance away.
+  const bar = part("bar");
+  const barBtn = bar.querySelector("button");
+  const barWatch = new IntersectionObserver(([entry]) => {
+    const show = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+    bar.classList.toggle("is-visible", show);
+    bar.setAttribute("aria-hidden", String(!show));
+    barBtn.tabIndex = show ? 0 : -1;
+  });
+  barWatch.observe(part("head"));
 
   // Challenge sheet ---------------------------------------------------------
 
@@ -379,30 +401,66 @@ export function mount(root, route, app) {
     if (app.justFound) celebrateFind(app.justFound);
   }
 
-  // The photo settles into the collection, and the collection's count and
-  // the progress route both tick up, so the gain is visible wherever the
-  // player is on the page.
+  // After a find: progress ticks up at once; the card fades out of the open
+  // grid and the rest glide into place; the print lands in the collection
+  // when the player scrolls down to it. The page never jumps away from
+  // where they are.
+  const LEAVE_MS = 220;
+  let pendingLand = null;
+
   function celebrateFind(id) {
     app.justFound = null;
-    const wasNew = !root.querySelector(`.grid--found [data-card="${CSS.escape(id)}"]`);
+    const sel = `[data-card="${CSS.escape(id)}"]`;
+    const leaving = root.querySelector(`.grid:not(.grid--found) ${sel} .card`);
     renderHead();
-    renderNext();
-    renderCards();
-    renderFoot();
-    const btn = root.querySelector(`[data-card="${CSS.escape(id)}"] .card`);
-    btn.classList.add("is-new");
     const head = root.querySelector(".board__head");
     head.classList.add("is-updated");
-    if (wasNew) {
-      head.querySelectorAll(".route li")[foundCount(getActive()) - 1]?.classList.add("is-new");
-      root.querySelector(".group-note__count")?.classList.add("is-new");
+    bar.classList.add("is-updated");
+    if (leaving) head.querySelectorAll(".route li")[foundCount(getActive()) - 1]?.classList.add("is-new");
+    setTimeout(() => {
+      head.classList.remove("is-updated");
+      bar.classList.remove("is-updated");
+    }, 1200);
+
+    const settle = () => {
+      const before = new Map([...root.querySelectorAll(".grid:not(.grid--found) [data-card]")].map((li) => [li.dataset.card, li.getBoundingClientRect()]));
+      renderNext();
+      renderCards();
+      renderFoot();
+      if (leaving) root.querySelector(".group-note__count")?.classList.add("is-new");
+      if (!reducedMotion()) glide(before);
+      landWhenSeen(root.querySelector(`${sel} .card`));
+    };
+    if (leaving && !reducedMotion()) {
+      leaving.classList.add("is-leaving");
+      setTimeout(settle, LEAVE_MS);
+    } else settle();
+  }
+
+  // FLIP: start each remaining open card where it was, then let it settle.
+  function glide(before) {
+    for (const li of root.querySelectorAll(".grid:not(.grid--found) [data-card]")) {
+      const from = before.get(li.dataset.card);
+      if (!from) continue;
+      const to = li.getBoundingClientRect();
+      const dx = from.left - to.left;
+      const dy = from.top - to.top;
+      if (!dx && !dy) continue;
+      li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: 320, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
     }
-    // Next frame: the layers above have only just closed and unlocked scrolling.
-    requestAnimationFrame(() => {
-      btn.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
-      btn.focus({ preventScroll: true });
-    });
-    setTimeout(() => head.classList.remove("is-updated"), 1200);
+  }
+
+  // Play the landing once the new print is actually on screen.
+  function landWhenSeen(btn) {
+    pendingLand?.disconnect();
+    if (!btn) return;
+    pendingLand = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      pendingLand.disconnect();
+      pendingLand = null;
+      btn.classList.add("is-new");
+    }, { threshold: 0.6 });
+    pendingLand.observe(btn);
   }
 
   // Actions -----------------------------------------------------------------
@@ -440,7 +498,10 @@ export function mount(root, route, app) {
     // The camera handles its own buttons.
     if (cameraDialog.contains(e.target)) return;
     const opener = e.target.closest("[data-open]");
-    if (opener && !sheet.open) return go(`hunt/${opener.dataset.open}`);
+    if (opener && !sheet.open) {
+      haptic(8);
+      return go(`hunt/${opener.dataset.open}`);
+    }
     const action = e.target.closest("[data-action]")?.dataset.action;
     switch (action) {
       case "home":
@@ -469,6 +530,8 @@ export function mount(root, route, app) {
     update: applyRoute,
     destroy() {
       root.removeEventListener("click", onClick);
+      barWatch.disconnect();
+      pendingLand?.disconnect();
       camera.destroy();
       if (draft?.url) URL.revokeObjectURL(draft.url);
     },
