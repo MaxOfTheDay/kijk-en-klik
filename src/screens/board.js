@@ -70,7 +70,6 @@ export function mount(root, route, app) {
 
   function card(c, i) {
     const find = finds()[c.id];
-    const num = String(i + 1).padStart(2, "0");
     if (find) {
       return `
         <button class="card is-found" data-open="${esc(c.id)}" data-photo-frame style="--tilt:${TILTS[i % TILTS.length]}deg">
@@ -82,8 +81,7 @@ export function mount(root, route, app) {
     }
     return `
       <button class="card" data-open="${esc(c.id)}">
-        <span class="card__num" aria-hidden="true">${num}</span>
-        <span class="card__icon" aria-hidden="true">${icon(c.icon, { size: 34 })}</span>
+        <span class="card__icon" aria-hidden="true">${icon(c.icon, { size: 38 })}</span>
         <span class="card__title">${esc(c.title)}</span>
         ${c.type === "together" ? `<span class="card__tag">Samen</span>` : ""}
         <span class="visually-hidden">— nog niet gevonden</span>
@@ -164,7 +162,6 @@ export function mount(root, route, app) {
     const find = finds()[c.id];
     const live = useLiveCamera();
     const tag = c.type === "together" ? "Samen" : CATEGORY_LABEL[c.category] ?? "";
-    const num = String(hunt.challenges.indexOf(c) + 1).padStart(2, "0");
     sheet.dataset.challenge = c.id;
     sheet.dataset.live = String(live);
     const takeLabel = find ? "Nieuwe foto maken" : "Foto maken";
@@ -175,7 +172,7 @@ export function mount(root, route, app) {
     sheet.innerHTML = `
       <div class="sheet__inner">
         <div class="sheet__top">
-          <span class="chip"><span class="chip__num">${num}</span>${tag ? esc(tag) : ""}</span>
+          ${tag ? `<span class="chip">${esc(tag)}</span>` : "<span></span>"}
           <button class="icon-btn" data-action="close" aria-label="Sluiten">${icon("close")}</button>
         </div>
         ${
