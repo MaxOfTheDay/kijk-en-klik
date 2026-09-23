@@ -1,6 +1,6 @@
 import { getLast } from "../lib/state.js";
 import { getHunt } from "../content/hunts.js";
-import { icon, trail } from "../content/icons.js";
+import { icon } from "../content/icons.js";
 import { buildRecap } from "../lib/recap.js";
 import { go, returnTo } from "../lib/nav.js";
 import { esc, reducedMotion } from "../lib/ui.js";
@@ -33,7 +33,6 @@ export function mount(root, route, app) {
         <h1 class="recap__title">${esc(recap.title)}</h1>
         <p class="recap__meta">${recap.found} van ${recap.total} gevonden · ${esc(recap.dateLabel)}</p>
         ${recap.found ? `<p class="recap__cheer">${complete ? "Wat een tocht!" : "Mooie vondsten!"}</p>` : ""}
-        ${trail({ className: "recap__trail" })}
       </section>
 
       ${recap.items.length ? collage(recap.items) : `

@@ -40,9 +40,14 @@
   --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --sans: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
+  /* Geometry: prints (photos) are nearly square-cornered paper; everything
+     else is a soft card, a surface, or a sheet. */
+  --radius-print: 4px;
+  --radius-sm: 10px;
   --radius: 14px;
   --radius-lg: 20px;
   --lift: 0 1px 0 rgb(40 30 10 / 0.05), 0 10px 26px -16px rgb(60 40 10 / 0.35);
+  --print-shadow: 0 1px 1px rgb(40 30 10 / 0.08), 0 13px 26px -15px rgb(60 40 10 / 0.52);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --gutter: 20px;
 
@@ -162,7 +167,7 @@ img {
   place-items: center;
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   color: var(--ink);
 }
 .icon-btn:active {
@@ -191,13 +196,15 @@ img {
 }
 
 .privacy {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   font-size: 14px;
   color: var(--ink-soft);
   text-align: center;
+  text-wrap: balance;
+}
+.privacy .icon {
+  display: inline;
+  margin-right: 6px;
+  vertical-align: -2px;
 }
 
 /* Buttons ------------------------------------------------------------------ */
@@ -443,13 +450,6 @@ img {
   font-size: 16px;
   line-height: 1.35;
 }
-.hunt-card__meta {
-  margin-top: 4px;
-  font: 700 12px/1.2 var(--sans);
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--accent-ink);
-}
 .hunt-card__arrow {
   color: var(--ink-soft);
 }
@@ -540,7 +540,7 @@ img {
   padding: 22px 20px 20px;
   background: var(--accent-wash);
   border: 1.5px solid var(--accent-line);
-  border-radius: 18px 20px 17px 21px;
+  border-radius: var(--radius-lg);
 }
 .next[hidden] {
   display: none;
@@ -580,7 +580,7 @@ img {
   background: var(--card);
   border: 1px solid var(--line-strong);
   /* Slightly uneven corners, like cut paper. */
-  border-radius: 14px 16px 13px 15px;
+  border-radius: var(--radius);
   transition: transform 0.12s ease;
 }
 .card:active {
@@ -644,11 +644,9 @@ img {
   overflow: hidden;
   padding: 0;
   border: 4px solid var(--print);
-  border-radius: 6px;
+  border-radius: var(--radius-print);
   background: var(--paper-deep);
-  box-shadow:
-    0 1px 1px rgb(40 30 10 / 0.08),
-    0 12px 24px -14px rgb(60 40 10 / 0.55);
+  box-shadow: var(--print-shadow);
   transform: rotate(var(--tilt, 0deg));
 }
 .card.is-found:active {
@@ -873,7 +871,7 @@ dialog::backdrop {
   font-size: 15px;
   color: var(--ink);
   background: var(--paper);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 .sheet__note:empty {
   display: none;
@@ -923,7 +921,7 @@ dialog::backdrop {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: var(--radius-print);
   animation: develop 0.6s ease both;
 }
 @keyframes develop {
@@ -946,7 +944,7 @@ dialog::backdrop {
 .preview__error {
   margin-top: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: rgb(255 255 255 / 0.1);
   font-size: 15px;
 }
@@ -1315,15 +1313,6 @@ dialog::backdrop {
   font: italic 500 21px/1.3 var(--serif);
   color: var(--accent-ink);
 }
-.recap__trail {
-  display: block;
-  width: min(70%, 260px);
-  height: auto;
-  margin: 20px auto 0;
-  color: var(--accent);
-  opacity: 0.5;
-}
-
 .collage {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1333,10 +1322,8 @@ dialog::backdrop {
   position: relative;
   padding: 8px 8px 12px;
   background: var(--print);
-  border-radius: 3px;
-  box-shadow:
-    0 1px 1px rgb(40 30 10 / 0.08),
-    0 14px 28px -16px rgb(60 40 10 / 0.5);
+  border-radius: var(--radius-print);
+  box-shadow: var(--print-shadow);
   transform: rotate(var(--tilt));
 }
 /* A strip of tape holding each print to the page. */
