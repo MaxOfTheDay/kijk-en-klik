@@ -17,7 +17,9 @@ export function mount(root) {
       <header class="home__head">
         <p class="wordmark">${icon("camera", { size: 20 })}<span>Kijk <i>&amp;</i> Klik</span></p>
         <h1 class="home__title">Ga op pad.<br>Kijk goed.<br><em>Klik!</em></h1>
-        <p class="home__lede">Kies een speurtocht en vind 8 dingen om te fotograferen.</p>
+        <p class="home__lede">${
+          activeHunt ? "Ga verder waar je gebleven was, of kies een nieuwe speurtocht." : "Kies een speurtocht en vind 8 dingen om te fotograferen."
+        }</p>
         ${trail({ className: "home__trail", end: "cross" })}
       </header>
 
@@ -52,14 +54,14 @@ function resumeCard(run, hunt) {
     ...Array.from({ length: total - photos.length }, () => `<span class="strip__slot"></span>`),
   ].join("");
   return `
-    <section class="resume" style="--accent:${hunt.accent}" aria-labelledby="resume-title">
+    <section class="resume" aria-labelledby="resume-title">
       <p class="eyebrow">${icon("compass", { size: 16 })} Onderweg</p>
       <h2 id="resume-title" class="resume__title">${esc(hunt.title)}</h2>
       <p class="resume__count">${n === 0 ? `${total} dingen om te vinden` : `<b>${n}</b> van ${total} gevonden`}</p>
       <div class="strip" aria-hidden="true">${slots}</div>
-      <button class="btn btn--primary btn--big" data-go="hunt">Ga verder ${icon("arrow")}</button>
+      <button class="btn btn--primary" data-go="hunt">Ga verder ${icon("arrow")}</button>
     </section>
-    <button class="btn btn--quiet" data-go="hunts">Andere speurtocht kiezen</button>`;
+    <button class="btn btn--quiet home__other" data-go="hunts">Nieuwe speurtocht kiezen ${icon("arrow", { size: 16 })}</button>`;
 }
 
 function lastWalkCard(run, hunt) {
@@ -76,7 +78,7 @@ function lastWalkCard(run, hunt) {
       <span class="lastwalk__text">
         <span class="eyebrow eyebrow--muted">Vorige tocht</span>
         <span class="lastwalk__title">${esc(hunt.title)}</span>
-        <span class="lastwalk__meta">${n} van ${hunt.challenges.length} · ${formatDate(run.startedAt)}</span>
+        <span class="lastwalk__meta">${n}/${hunt.challenges.length} · ${formatDate(run.startedAt, { short: true })}</span>
       </span>
       ${icon("arrow", { className: "lastwalk__arrow" })}
     </button>`;
