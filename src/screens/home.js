@@ -24,7 +24,7 @@ export function mount(root) {
       </header>
 
       ${activeHunt ? resumeCard(active, activeHunt) : `
-        <button class="btn btn--primary btn--big" data-go="hunts">
+        <button class="btn btn--primary home__start" data-go="hunts">
           Start een speurtocht ${icon("arrow")}
         </button>`}
 
@@ -80,6 +80,6 @@ function lastWalkCard(run, hunt) {
         <span class="lastwalk__title">${esc(hunt.title)}</span>
         <span class="lastwalk__meta">${n}/${hunt.challenges.length} · ${formatDate(run.startedAt, { short: true })}</span>
       </span>
-      ${icon("arrow", { className: "lastwalk__arrow" })}
+      ${icon("arrow", { size: 18, className: "lastwalk__arrow" })}
     </button>`;
 }
