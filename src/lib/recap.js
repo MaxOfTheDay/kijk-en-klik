@@ -24,6 +24,7 @@ export function buildRecap(run, hunt) {
   };
 }
 
-export function formatDate(ts) {
-  return new Date(ts).toLocaleDateString("nl-NL", { day: "numeric", month: "long" });
+// "23 september", or with { short: true } "23 sep".
+export function formatDate(ts, { short = false } = {}) {
+  return new Date(ts).toLocaleDateString("nl-NL", { day: "numeric", month: short ? "short" : "long" }).replace(/\.$/, "");
 }

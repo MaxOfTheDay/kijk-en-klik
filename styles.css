@@ -256,7 +256,15 @@ img {
   color: var(--ink-soft);
   text-decoration: underline;
   text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--ink-soft) 45%, transparent);
   text-underline-offset: 4px;
+}
+.home__other {
+  gap: 6px;
+  font-size: 16px;
+}
+.home__other .icon {
+  color: var(--ink-mute);
 }
 .btn--on-dark {
   background: rgb(255 255 255 / 0.12);
@@ -295,11 +303,11 @@ img {
    from the shared display style (which the recap keeps), set tight. */
 .home__title {
   font: var(--type-display);
-  font-size: clamp(30px, 8.5vw, 39px);
-  line-height: 0.94;
+  font-size: clamp(27px, 7.2vw, 32px);
+  line-height: 0.96;
   font-variation-settings: "SOFT" 60;
   letter-spacing: -0.02em;
-  margin: 18px 0 6px;
+  margin: 12px 0 6px;
 }
 .home__title em {
   font-style: italic;
@@ -308,9 +316,9 @@ img {
 }
 .home__lede {
   font-size: 17px;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--ink-soft);
-  max-width: 32ch;
+  max-width: 34ch;
   text-wrap: balance;
 }
 /* A small route from where you are to the X: the expedition, in miniature. */
@@ -319,7 +327,7 @@ img {
   width: min(100%, 176px);
   height: auto;
   /* The drawing sits in the middle of its box; trim the empty band around it. */
-  margin: 2px 0 -4px;
+  margin: 2px 0 -7px;
   color: var(--accent);
   opacity: 0.8;
 }
@@ -328,8 +336,10 @@ img {
   padding-top: 28px;
 }
 
+/* The page's main object. It uses the app's own green (not the hunt's
+   colour, which belongs to the hunt's own screens). */
 .resume {
-  padding: 22px 20px 20px;
+  padding: 18px 18px 16px;
   background: var(--card);
   border: 1.5px solid var(--accent-line);
   border-radius: var(--radius-lg);
@@ -337,8 +347,9 @@ img {
 }
 .resume__title {
   font: var(--type-title);
+  font-size: 28px;
   letter-spacing: -0.015em;
-  margin: 8px 0 4px;
+  margin: 6px 0 2px;
 }
 .resume__count {
   color: var(--ink-soft);
@@ -347,21 +358,28 @@ img {
   font-weight: 700;
   color: var(--accent-ink);
 }
+/* Eight frames to fill: found photos are small prints, open frames are
+   faint placeholders that step back. */
 .strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(28px, 1fr));
+  display: flex;
+  align-items: center;
   gap: 6px;
-  margin: 16px 0 18px;
+  margin: 12px 0 14px;
 }
 .strip__slot {
+  flex: 0 1 20px;
+  min-width: 0;
   aspect-ratio: 1;
-  border-radius: 7px;
-  border: 1.5px dashed var(--line-strong);
+  border-radius: 5px;
+  border: 1px dashed color-mix(in srgb, var(--line-strong) 60%, transparent);
   overflow: hidden;
 }
 .strip__slot.is-found {
-  border: 0;
+  flex-basis: 34px;
+  border: 2px solid var(--print);
+  border-radius: var(--radius-print);
   background: var(--paper-deep);
+  box-shadow: 0 1px 3px rgb(60 40 10 / 0.25);
 }
 .strip__slot img {
   width: 100%;
@@ -373,13 +391,13 @@ img {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
-  margin-top: 14px;
-  padding: 14px 16px;
+  margin-top: 10px;
+  padding: 10px 14px;
   text-align: left;
-  background: color-mix(in srgb, var(--card) 60%, transparent);
-  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
   border-radius: var(--radius-lg);
   transition: transform 0.12s ease;
 }
@@ -390,20 +408,20 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 56px;
-  height: 56px;
+  min-width: 46px;
+  height: 46px;
   color: var(--ink-mute);
 }
 .lastwalk__photos img {
-  width: 42px;
-  height: 52px;
+  width: 32px;
+  height: 40px;
   object-fit: cover;
-  border: 3px solid var(--print);
-  box-shadow: 0 2px 6px rgb(60 40 10 / 0.2);
+  border: 2px solid var(--print);
+  box-shadow: 0 1px 4px rgb(60 40 10 / 0.18);
   background: var(--paper-deep);
 }
 .lastwalk__photos img + img {
-  margin-left: -22px;
+  margin-left: -17px;
 }
 .lastwalk__photos img:nth-child(1) {
   transform: rotate(-5deg);
@@ -419,10 +437,10 @@ img {
   gap: 2px;
 }
 .lastwalk__title {
-  font: 560 19px/1.15 var(--serif);
+  font: 560 17px/1.15 var(--serif);
 }
 .lastwalk__meta {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ink-soft);
 }
 .lastwalk__arrow {

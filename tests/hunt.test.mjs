@@ -265,7 +265,7 @@ test("a saved walk is never replaced by an empty hunt, and never replaced silent
   assert.equal(await page.locator("dialog.confirm").getByText("verdwijnt").count(), 0);
   await page.locator("dialog.confirm button[value=yes]").click();
   await page.locator(".lastwalk", { hasText: "Kleuren & vormen" }).waitFor();
-  assert.match(await page.locator(".lastwalk__meta").innerText(), /^2 van 8/);
+  assert.match(await page.locator(".lastwalk__meta").innerText(), /^2\/8 · /);
   assert.equal(await photoCount(), 2);
 
   // With a find of its own, switching hunts says the saved walk will go.
@@ -273,7 +273,7 @@ test("a saved walk is never replaced by an empty hunt, and never replaced silent
   await page.getByRole("button", { name: /Natuurspeurtocht/ }).click();
   await captureFromLibrary(page, "vreemdste boom");
   await page.getByRole("button", { name: "Terug naar start" }).click();
-  await page.getByRole("button", { name: "Andere speurtocht kiezen" }).click();
+  await page.getByRole("button", { name: "Nieuwe speurtocht kiezen" }).click();
   await page.getByRole("button", { name: /Gekke vondsten/ }).click();
   await assert.doesNotReject(
     page.locator("dialog.confirm").getByText("Je vorige tocht, Kleuren & vormen, verdwijnt dan van dit toestel, met alle 2 foto's.").waitFor(),
