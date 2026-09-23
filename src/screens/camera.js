@@ -181,6 +181,12 @@ export function createCamera(dialog, { onCapture, onPick, onClose }) {
       if (!dialog.open) dialog.showModal();
       showFallback(kind);
     },
+    // Back to the rear camera. The board calls this whenever a challenge is
+    // opened afresh, so a selfie switch only lasts for that challenge (a
+    // retake from the preview keeps it).
+    resetFacing() {
+      facing = "environment";
+    },
     // A photo is being developed from the picker: keep the layer calm.
     setStatus,
     get isOpen() {

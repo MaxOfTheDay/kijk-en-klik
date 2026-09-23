@@ -23,12 +23,24 @@ export async function checkCameraPermission() {
   }
 }
 
+// The rear camera is asked for with `exact`, so a front camera that happens to
+// match the resolution better can't win. Browsers or devices that can't
+// satisfy it (laptops, some older phones) fall back to a preference.
 export async function startStream(facing) {
-  try {
-    return await navigator.mediaDevices.getUserMedia({
+  const request = (facingMode) =>
+    navigator.mediaDevices.getUserMedia({
       audio: false,
-      video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1440 } },
     });
+  try {
+    if (facing === "environment") {
+      try {
+        return await request({ exact: facing });
+      } catch (err) {
+        if (err?.name !== "OverconstrainedError" && err?.name !== "NotFoundError") throw err;
+      }
+    }
+    return await request({ ideal: facing });
   } catch (err) {
     if (err?.name === "NotAllowedError" || err?.name === "SecurityError") blocked = true;
     throw err;

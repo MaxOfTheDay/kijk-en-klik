@@ -84,11 +84,21 @@ export function recordFind(challengeId, photoId) {
   return previous;
 }
 
-// Finishes the active hunt; it becomes the last walk. Returns orphaned ids.
+// The saved walk that wrapping up the active hunt would replace, if that walk
+// has photos. Only a hunt with finds of its own ever replaces the last walk.
+export function walkAtRisk() {
+  const s = read();
+  if (foundCount(s.active) === 0 || foundCount(s.last) === 0) return null;
+  return s.last;
+}
+
+// Finishes the active hunt; it becomes the last walk. A hunt without finds
+// just ends, so it never pushes out a saved walk. Returns orphaned ids.
 export function finishActive() {
   const s = read();
   if (!s.active) return [];
-  write({ ...s, active: null, last: { ...s.active, finishedAt: Date.now() } });
+  const last = foundCount(s.active) > 0 ? { ...s.active, finishedAt: Date.now() } : s.last;
+  write({ ...s, active: null, last });
   return orphansAfter(s);
 }
 

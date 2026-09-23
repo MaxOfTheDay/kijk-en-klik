@@ -1,3 +1,5 @@
+import { walkAtRisk, foundCount } from "../lib/state.js";
+import { getHunt } from "../content/hunts.js";
 import { photoUrl, cachedPhotoUrl } from "../lib/photos.js";
 
 // Fills every <img data-photo-id> under `root` from local storage.
@@ -25,4 +27,14 @@ export function hydratePhotos(root) {
       }
     }),
   );
+}
+
+// One plain sentence for confirm dialogs when wrapping up the active hunt
+// would replace a saved walk with photos. Empty when nothing would be lost.
+export function replacedWalkNote() {
+  const run = walkAtRisk();
+  const hunt = run && getHunt(run.huntId);
+  if (!hunt) return "";
+  const n = foundCount(run);
+  return `Je vorige tocht, ${hunt.title}, verdwijnt dan van dit toestel, met ${n === 1 ? "de foto" : `alle ${n} foto's`}.`;
 }

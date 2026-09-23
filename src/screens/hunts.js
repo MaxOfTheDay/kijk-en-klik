@@ -4,6 +4,7 @@ import { getActive, foundCount, startHunt } from "../lib/state.js";
 import { deletePhotos } from "../lib/photos.js";
 import { go, returnTo } from "../lib/nav.js";
 import { esc, confirmDialog, toast } from "../lib/ui.js";
+import { replacedWalkNote } from "./shared.js";
 
 export function mount(root) {
   root.innerHTML = `
@@ -41,7 +42,10 @@ export function mount(root) {
     if (activeHunt && foundCount(active) > 0) {
       const ok = await confirmDialog({
         title: `Beginnen met ${hunt.title}?`,
-        body: `Je ${activeHunt.title} wordt afgerond met ${foundCount(active)} van ${activeHunt.challenges.length} gevonden, en bewaard als je laatste tocht.`,
+        body: [
+          `Je ${activeHunt.title} wordt afgerond met ${foundCount(active)} van ${activeHunt.challenges.length} gevonden, en bewaard als je laatste tocht.`,
+          replacedWalkNote(),
+        ].join(" ").trim(),
         confirm: "Nieuwe tocht beginnen",
         cancel: "Huidige tocht houden",
       });

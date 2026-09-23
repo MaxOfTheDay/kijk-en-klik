@@ -12,7 +12,7 @@ import { pickPhoto } from "../lib/capture.js";
 import { liveCameraSupported, liveCameraBlocked, checkCameraPermission } from "../lib/camera.js";
 import { go, returnTo } from "../lib/nav.js";
 import { esc, haptic, confirmDialog, reducedMotion } from "../lib/ui.js";
-import { hydratePhotos } from "./shared.js";
+import { hydratePhotos, replacedWalkNote } from "./shared.js";
 import { createCamera } from "./camera.js";
 
 const CATEGORY_LABEL = {
@@ -333,6 +333,8 @@ export function mount(root, route, app) {
   });
 
   function ensureSheet(c) {
+    // A challenge opened afresh always starts from the rear camera.
+    if (current() !== c.id) camera.resetFacing();
     // Re-render when the camera turned out to be unavailable in the meantime.
     if (!sheet.open || current() !== c.id || sheet.dataset.live !== String(useLiveCamera())) renderSheet(c);
     if (!sheet.open) sheet.showModal();
@@ -406,12 +408,13 @@ export function mount(root, route, app) {
   async function finish() {
     const n = foundCount(getActive());
     const total = hunt.challenges.length;
-    if (n < total) {
+    const replaced = replacedWalkNote();
+    if (n < total || replaced) {
       const ok = await confirmDialog({
-        title: n === 0 ? "Afronden zonder vondsten?" : `Afronden met ${n} van ${total} vondsten?`,
-        body: n === 0 ? "Geeft niks. Er komt vast nog een wandeling." : "",
+        title: n === 0 ? "Afronden zonder vondsten?" : n === total ? "Alles gevonden!" : `Afronden met ${n} van ${total} vondsten?`,
+        body: n === 0 ? "Geeft niks. Er komt vast nog een wandeling." : replaced,
         confirm: "Afronden",
-        cancel: "Verder zoeken",
+        cancel: n === total ? "Nog niet" : "Verder zoeken",
       });
       if (!ok) return;
     }
@@ -422,6 +425,8 @@ export function mount(root, route, app) {
       return;
     }
     deletePhotos(orphans).catch(() => {});
+    // Nothing found: the empty hunt simply ends; there is no recap to show.
+    if (n === 0) return go("", { replace: true });
     haptic([20, 80, 20, 80, 30]);
     app.celebrate = true;
     go("recap", { replace: true });
