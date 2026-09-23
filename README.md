@@ -73,7 +73,7 @@ Each layer has one job:
 Edit `src/content/hunts.js`. Write prompts in short, natural Dutch that works
 when read aloud to a 5–8 year old. A hunt needs an `id`, `title`, `description`, a
 `theme` (an icon key), an `accent` colour and about 8 `challenges`. The order of
-the challenges sets the pacing and decides what "Try this next" suggests. Don't
+the challenges is the order of the cards on the board. Don't
 rename `id`s after release, because saved progress refers to them. New icons go
 in `src/content/icons.js`.
 

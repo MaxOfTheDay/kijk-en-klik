@@ -9,7 +9,7 @@
 //   accent       theme colour; the rest of the design system is shared
 //   mode         "open": any order (the only mode today). A future "story"
 //                mode would unlock challenges one by one.
-//   challenges   authored order = pacing, and the order "Try this next" follows
+//   challenges   authored order = the order of the cards on the board
 //
 // Challenge
 //   id         stable within its hunt — saved photos are linked by it

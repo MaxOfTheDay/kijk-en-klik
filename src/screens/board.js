@@ -4,7 +4,7 @@
 //   photo preview    (#/hunt/<id>/photo)   use it or take it again
 
 import { getHunt, getChallenge } from "../content/hunts.js";
-import { icon, trail } from "../content/icons.js";
+import { icon } from "../content/icons.js";
 import { getActive, foundCount, recordFind, finishActive } from "../lib/state.js";
 import { savePhoto, deletePhotos, newPhotoId, saveDraft, getDraft, clearDraft } from "../lib/photos.js";
 import { processImage, UnreadableImageError } from "../lib/image.js";
@@ -39,9 +39,8 @@ export function mount(root, route, app) {
         <span class="topbar__mark" aria-hidden="true">${icon(hunt.theme)}</span>
       </header>
       <section class="board__head" data-part="head"></section>
-      <section class="next" data-part="next"></section>
-      <section class="board__grid" aria-labelledby="grid-title">
-        <h2 id="grid-title" class="section-label">${icon("flag", { size: 15 })} Jullie bord</h2>
+      <section class="next" data-part="next" hidden></section>
+      <section class="board__grid" aria-label="Wat je kunt vinden">
         <ul class="grid">
           ${hunt.challenges.map((c, i) => `<li data-card="${esc(c.id)}">${card(c, i)}</li>`).join("")}
         </ul>
@@ -109,26 +108,17 @@ export function mount(root, route, app) {
       <ol class="route" aria-hidden="true">${stops}<li class="route__end">${icon("flag", { size: 16 })}</li></ol>`;
   }
 
+  // Only shown once the board is full. Until then the board itself is the
+  // guide: every open card is visible and any of them is a fine next step.
   function renderNext() {
-    const next = hunt.challenges.find((c) => !finds()[c.id]);
     const el = part("next");
-    if (!next) {
-      el.className = "next next--done";
+    el.hidden = hunt.challenges.some((c) => !finds()[c.id]);
+    if (!el.hidden) {
       el.innerHTML = `
         <p class="eyebrow">${icon("star", { size: 16 })} Alles gevonden</p>
         <h2 class="next__done-title">Het bord is vol!</h2>
         <button class="btn btn--primary btn--big" data-action="finish">Bekijk jullie vondsten ${icon("arrow")}</button>`;
-      return;
     }
-    el.className = "next";
-    el.innerHTML = `
-      <p class="eyebrow">${icon("compass", { size: 16 })} Probeer deze eens</p>
-      <button class="next__card" data-open="${esc(next.id)}">
-        <span class="next__icon">${icon(next.icon, { size: 32 })}</span>
-        <span class="next__title">${esc(next.title)}</span>
-        <span class="next__cta">Op zoek ${icon("arrow", { size: 18 })}</span>
-        ${trail({ className: "next__trail", end: "cross" })}
-      </button>`;
   }
 
   function renderFoot() {
