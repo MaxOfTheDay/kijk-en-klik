@@ -18,6 +18,7 @@ const APP_SHELL = [
   "src/app.js",
   "src/content/hunts.js",
   "src/content/icons.js",
+  "src/lib/ai-check.js",
   "src/lib/camera.js",
   "src/lib/capture.js",
   "src/lib/image.js",
