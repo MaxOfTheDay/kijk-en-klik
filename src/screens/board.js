@@ -130,7 +130,7 @@ export function mount(root, route, app) {
     if (!el.hidden) {
       el.innerHTML = `
         <h2 class="next__done-title">${icon("star", { size: 26, className: "next__star" })} Alles gevonden!</h2>
-        <button class="btn btn--primary btn--big" data-action="finish">Bekijk jullie vondsten ${icon("arrow")}</button>`;
+        <button class="btn btn--primary btn--big" data-action="finish">Klaar met zoeken ${icon("arrow")}</button>`;
     }
   }
 
@@ -177,7 +177,7 @@ export function mount(root, route, app) {
         </div>
         ${
           find
-            ? `<div class="sheet__photo" data-photo-frame><img alt="Jullie foto bij: ${esc(c.title)}" data-photo-id="${esc(find.photoId)}" data-photo-size="full"><span class="sheet__stamp" aria-hidden="true">${icon("check", { size: 20 })}</span></div>`
+            ? `<div class="sheet__photo" data-photo-frame><img alt="Jullie foto bij: ${esc(c.title)}" data-photo-id="${esc(find.photoId)}" data-photo-size="full"><span class="sheet__stamp" aria-hidden="true">${icon("check", { size: 17 })}</span></div>`
             : `<span class="sheet__icon">${icon(c.icon, { size: 36 })}</span>`
         }
         <h2 id="sheet-title" class="sheet__title">${esc(c.title)}</h2>

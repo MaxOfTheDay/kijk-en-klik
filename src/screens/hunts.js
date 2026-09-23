@@ -20,7 +20,7 @@ export function mount(root) {
         <button class="icon-btn" data-action="back" aria-label="Terug">${icon("back")}</button>
       </header>
       <h1 class="page-title">Kies een speurtocht</h1>
-      <p class="page-lede">Elke tocht is een bord met ${boardSize()} dingen om te vinden. In welke volgorde je maar wilt.</p>
+      <p class="page-lede">Elke tocht heeft ${boardSize()} dingen om te vinden, in welke volgorde je maar wilt.</p>
       <ul class="hunt-list">
         ${HUNTS.map(
           (h) => `
