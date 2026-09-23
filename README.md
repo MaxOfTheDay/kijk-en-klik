@@ -14,9 +14,15 @@ with a recap of the walk.
 npm start            # http://localhost:8080
 ```
 
-Any static file server works. To try it on a phone, deploy the folder to any HTTPS
-static host (GitHub Pages, Netlify, Cloudflare Pages…). Camera capture, service
-workers and installation all need HTTPS (or `localhost`).
+Any static file server works. Camera capture, service workers and installation
+all need HTTPS (or `localhost`).
+
+### Deploy
+
+`.github/workflows/pages.yml` runs the tests and publishes the app to GitHub
+Pages on every push to `main`. One-time setup: in the repo go to **Settings →
+Pages → Build and deployment** and set **Source** to **GitHub Actions**. The app
+uses relative paths, so it works at `https://<user>.github.io/kijk-en-klik/`.
 
 ```sh
 npm install          # dev only: Playwright, for tests and icon rendering
