@@ -481,7 +481,7 @@ img {
 
 /* One header block: expedition label, the count, and the route. */
 .board__head {
-  margin: 0 0 20px;
+  margin: 0 0 16px;
 }
 .board__head .eyebrow .icon {
   color: var(--accent);
@@ -511,7 +511,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 .route::before {
   content: "";
@@ -522,8 +522,20 @@ img {
   border-top: 2px dotted var(--ink-faint);
   opacity: 0.7;
 }
+/* The stretch already walked: solid accent up to the last found stop.
+   Stops sit 1/8 of the track apart (between the first stop and the flag). */
+.route::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: calc(50% - 1px);
+  width: calc((100% - 17px) * var(--fill, 0));
+  border-top: 2px solid var(--accent);
+  transition: width 0.4s var(--ease-out) 0.2s;
+}
 .route li {
   position: relative;
+  z-index: 1;
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -584,7 +596,7 @@ img {
   margin-top: 30px;
 }
 .group-note {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   font: var(--type-note);
   color: var(--ink-soft);
 }
@@ -626,7 +638,7 @@ img {
   width: 100%;
   aspect-ratio: 1;
   min-height: 0; /* always square: a long prompt borrows the bottom margin */
-  padding: 16px 16px 28px;
+  padding: 16px 16px 30px;
   /* Room for the tilt and shadow when a new photo is scrolled into view. */
   scroll-margin-block: 16px;
   text-align: left;
@@ -641,7 +653,18 @@ img {
 }
 .card:active {
   transform: scale(0.98);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong));
   box-shadow: 0 1px 0 rgb(40 30 10 / 0.04);
+}
+/* Found: it steps out of the open grid before the rest close up. */
+.card.is-leaving {
+  animation: card-leave 0.22s ease-in forwards;
+}
+@keyframes card-leave {
+  to {
+    opacity: 0;
+    transform: scale(0.94);
+  }
 }
 /* An empty photo slot: viewfinder corners, waiting for a discovery. They
    frame the card; they stay quieter than anything inside it. */
@@ -668,12 +691,16 @@ img {
 .card__icon {
   grid-area: clue;
   display: grid;
-  margin: 8px 0 0 -2px;
+  margin: 10px 0 0 -2px;
   color: var(--accent);
 }
 .card__icon .icon {
   width: 38px;
   height: 38px;
+  /* Optical size per glyph (see icons.js); the box itself never changes. */
+  transform: scale(var(--optical, 1));
+  /* Grow mostly upwards, into the open space, not towards the prompt. */
+  transform-origin: left 75%;
 }
 /* Lower text zone: three lines tall and filled from the top, so one- to
    three-line prompts all start on the same line. A rare four-line prompt
@@ -691,7 +718,7 @@ img {
 .card__tag {
   grid-area: tag;
   justify-self: start;
-  margin: 8px 0 0 10px;
+  margin: 10px 0 0 14px;
   padding: 3px 5px 2px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 8%, var(--card));
@@ -815,6 +842,79 @@ img {
 }
 .board__foot .btn--quiet {
   width: auto;
+}
+/* Once something is found, finishing stays within reach while scrolling.
+   It sits in the page flow, so at the end of the list it simply rests in
+   place below the collection and never covers it. */
+.board__foot.is-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin: 20px calc(-1 * var(--gutter)) 0;
+  padding: 18px var(--gutter) calc(env(safe-area-inset-bottom) + 12px);
+  background: linear-gradient(to top, var(--paper) 55%, color-mix(in srgb, var(--paper) 0%, transparent));
+  pointer-events: none;
+}
+.board__foot.is-sticky .btn {
+  pointer-events: auto;
+}
+.btn--pill {
+  width: auto;
+  min-height: 48px;
+  padding: 0 24px;
+  border-color: var(--ink);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--lift);
+  font-size: 16px;
+}
+
+/* Compact bar: back, hunt and n/total, only once the header is out of view. */
+.board__bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  padding-top: env(safe-area-inset-top);
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition:
+    transform 0.2s var(--ease-out),
+    visibility 0s linear 0.2s;
+}
+.board__bar.is-visible {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.2s var(--ease-out);
+}
+.board__bar-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px;
+  max-width: 560px;
+  height: 48px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) 0 calc(var(--gutter) - min(20px, var(--gutter)));
+}
+.board__bar-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 560 17px/1.2 var(--serif);
+}
+.board__bar-count {
+  font: 650 14px/1 var(--sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-ink);
+}
+.board__bar.is-updated .board__bar-count {
+  animation: count-pop 0.7s var(--ease-out) 0.35s;
 }
 
 /* Challenge sheet ---------------------------------------------------------- */
@@ -1518,6 +1618,9 @@ dialog::backdrop {
   .grid--found {
     grid-template-columns: repeat(4, 1fr);
   }
+  .board__bar-inner {
+    max-width: 760px;
+  }
   .sheet {
     margin: auto;
     border-radius: 24px;
@@ -1538,6 +1641,9 @@ dialog::backdrop {
 /* Narrow cards: a shallower top row keeps four-line prompts clear of the
    corner marks. */
 @media (max-width: 380px) {
+  .card:not(.is-found) {
+    padding-bottom: 26px;
+  }
   .hunt-card {
     grid-template-columns: 44px 1fr auto;
     gap: 12px;
@@ -1557,11 +1663,12 @@ dialog::backdrop {
 
 /* Larger cards (about 180px) have room to lift the prompt a little more. */
 @media (min-width: 400px) {
-  .card__icon {
-    margin-top: 10px;
+  .card__icon,
+  .card__tag {
+    margin-top: 14px;
   }
   .card:not(.is-found) {
-    padding-bottom: 34px;
+    padding-bottom: 38px;
   }
 }
 
