@@ -41,7 +41,7 @@
   --sans: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* Type roles. One style per role, reused across screens. */
-  --type-display: 560 clamp(36px, 10.5vw, 48px) / 1.02 var(--serif); /* hero, recap */
+  --type-display: 560 clamp(34px, 10vw, 46px) / 1 var(--serif); /* hero, recap */
   --type-title: 560 32px/1.1 var(--serif); /* the one page/sheet heading */
   --type-heading: 560 24px/1.15 var(--serif); /* heading inside a card or dialog */
   --type-prompt-dark: 500 18px/1.25 var(--serif); /* the prompt over the camera */
@@ -275,26 +275,29 @@ img {
   gap: 14px;
   min-height: 100dvh;
 }
+/* The hero reads as one block: brand, proposition, explanation, route. */
 .home__head {
-  padding-top: 16px;
-  margin-bottom: 10px;
+  padding-top: 12px;
+  margin-bottom: 6px;
 }
 .wordmark {
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 600 19px/1 var(--serif);
+  font: 640 21px/1 var(--serif);
   letter-spacing: -0.01em;
 }
+/* The ampersand borrows the green italic of "Klik!". */
 .wordmark i {
-  font-weight: 400;
-  color: var(--ink-soft);
+  font-weight: 500;
+  color: var(--accent);
 }
 .home__title {
   font: var(--type-display);
+  line-height: 0.95;
   font-variation-settings: "SOFT" 60;
   letter-spacing: -0.025em;
-  margin: 32px 0 14px;
+  margin: 24px 0 12px;
 }
 .home__title em {
   font-style: italic;
@@ -306,13 +309,14 @@ img {
   color: var(--ink-soft);
   max-width: 30ch;
 }
+/* A small route from where you are to the X: the expedition, in miniature. */
 .home__trail {
   display: block;
-  width: min(100%, 220px);
+  width: min(100%, 176px);
   height: auto;
-  margin-top: 16px;
+  margin-top: 10px;
   color: var(--accent);
-  opacity: 0.6;
+  opacity: 0.8;
 }
 .home__foot {
   margin-top: auto;
