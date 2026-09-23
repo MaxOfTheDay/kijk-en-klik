@@ -606,7 +606,8 @@ img {
   position: relative;
   display: grid;
   grid-template-columns: auto auto 1fr;
-  grid-template-rows: auto 1fr auto;
+  /* The open middle never closes below 8px, even for the longest prompt. */
+  grid-template-rows: auto minmax(8px, 1fr) min-content;
   grid-template-areas:
     "num tag clue"
     ". . ."
@@ -614,7 +615,8 @@ img {
   align-items: center;
   width: 100%;
   aspect-ratio: 1;
-  padding: 16px 16px 18px;
+  min-height: 0; /* always square: a long prompt borrows the bottom margin */
+  padding: 16px 16px 28px;
   /* Room for the tilt and shadow when a new photo is scrolled into view. */
   scroll-margin-block: 16px;
   text-align: left;
@@ -633,7 +635,7 @@ img {
   position: absolute;
   inset: 8px;
   pointer-events: none;
-  --c: color-mix(in srgb, var(--line-strong) 36%, transparent);
+  --c: color-mix(in srgb, var(--line-strong) 32%, transparent);
   --arm: 12px;
   background:
     linear-gradient(var(--c), var(--c)) top left / var(--arm) 2px,
@@ -646,33 +648,37 @@ img {
     linear-gradient(var(--c), var(--c)) bottom right / 2px var(--arm);
   background-repeat: no-repeat;
 }
-/* Marker: the challenge number in a dashed ring, a checkpoint rather than
-   the main visual. */
+/* Marker: the challenge number in a thin, quiet ring. A checkpoint, and
+   deliberately softer than the clue beside it. */
 .card__num {
   grid-area: num;
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+  width: 26px;
+  height: 26px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
   border-radius: 50%;
-  font: italic 560 13px/1 var(--serif);
-  color: var(--accent-ink);
+  font: italic 500 12px/1 var(--serif);
+  color: color-mix(in srgb, var(--accent-ink) 78%, var(--card));
 }
 /* Clue: the challenge's icon, the one recognisable picture on an empty card. */
+/* Set in from the corner, so it sits in the card rather than on its edge. */
 .card__icon {
   grid-area: clue;
+  display: grid;
+  align-self: start;
   justify-self: end;
-  margin-right: 3px;
+  margin: 8px 7px 0 0;
   color: var(--accent);
 }
 .card__icon .icon {
   width: 34px;
   height: 34px;
 }
-/* Lower text zone: always three lines tall and filled from the top, so one-,
-   two- and three-line prompts all start on the same line. A rare four-line
-   prompt grows upward into the open space. */
+/* Lower text zone: three lines tall and filled from the top, so one- to
+   three-line prompts all start on the same line. A rare four-line prompt
+   starts a line higher, never closer than 8px to the top row; if the card
+   is still short, it borrows from the lifted bottom margin. */
 .card__title {
   grid-area: title;
   align-self: end;
@@ -684,12 +690,12 @@ img {
 /* Metadata beside the marker: a small, quiet chip. */
 .card__tag {
   grid-area: tag;
-  margin-left: 5px;
-  padding: 3px 6px 2px;
+  margin-left: 8px;
+  padding: 3px 5px 2px;
   border-radius: 999px;
   background: var(--accent-wash);
   font: 700 10px/1 var(--sans);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--accent-ink);
 }
@@ -1513,16 +1519,19 @@ dialog::backdrop {
   .card__title {
     font-size: 16px;
   }
-  .card__icon {
-    margin-right: 0;
-  }
   .card__icon .icon {
     width: 32px;
     height: 32px;
   }
+}
+
+/* Narrow cards: the top line (marker, chip, clue) needs the width it has. */
+@media (max-width: 380px) {
+  .card__icon {
+    margin: 5px 2px 0 0;
+  }
   .card__tag {
-    margin-left: 4px;
-    padding-inline: 5px;
+    margin-left: 6px;
   }
 }
 
