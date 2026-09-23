@@ -115,8 +115,7 @@ export function mount(root, route, app) {
     el.hidden = hunt.challenges.some((c) => !finds()[c.id]);
     if (!el.hidden) {
       el.innerHTML = `
-        <p class="eyebrow">${icon("star", { size: 16 })} Alles gevonden</p>
-        <h2 class="next__done-title">Het bord is vol!</h2>
+        <h2 class="next__done-title">${icon("star", { size: 26, className: "next__star" })} Alles gevonden!</h2>
         <button class="btn btn--primary btn--big" data-action="finish">Bekijk jullie vondsten ${icon("arrow")}</button>`;
     }
   }
@@ -131,7 +130,7 @@ export function mount(root, route, app) {
     }
     // Quiet at first; more present once half the board is filled.
     const style = n >= Math.ceil(total / 2) ? "btn--secondary" : "btn--quiet";
-    el.innerHTML = `<button class="btn ${style}" data-action="finish">Speurtocht afronden</button>`;
+    el.innerHTML = `<button class="btn ${style}" data-action="finish">Klaar met zoeken</button>`;
   }
 
   function refreshCard(id) {
@@ -398,11 +397,13 @@ export function mount(root, route, app) {
     const n = foundCount(getActive());
     const total = hunt.challenges.length;
     const replaced = replacedWalkNote();
+    // A full board goes straight to the recap, unless a saved walk would go.
     if (n < total || replaced) {
+      const kept = n === 0 ? "Geeft niks. Er komt vast nog een wandeling." : n === 1 ? "Jullie foto gaat in het overzicht." : `Jullie ${n} foto's gaan in het overzicht.`;
       const ok = await confirmDialog({
-        title: n === 0 ? "Afronden zonder vondsten?" : n === total ? "Alles gevonden!" : `Afronden met ${n} van ${total} vondsten?`,
-        body: n === 0 ? "Geeft niks. Er komt vast nog een wandeling." : replaced,
-        confirm: "Afronden",
+        title: n === total ? "Alles gevonden!" : "Klaar voor vandaag?",
+        body: [n === total ? "" : kept, replaced].join(" ").trim(),
+        confirm: "Klaar!",
         cancel: n === total ? "Nog niet" : "Verder zoeken",
       });
       if (!ok) return;

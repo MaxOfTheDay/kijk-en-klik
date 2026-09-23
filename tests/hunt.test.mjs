@@ -116,13 +116,16 @@ test("a hunt can be played out of order, resumed, finished early and replayed of
   assert.equal(await page.locator(".grid .card.is-found").count(), 2);
 
   // Finish early.
-  await page.getByRole("button", { name: "Speurtocht afronden" }).click();
-  await assert.doesNotReject(page.getByRole("heading", { name: "Afronden met 2 van 8 vondsten?" }).waitFor());
+  await page.getByRole("button", { name: "Klaar met zoeken" }).click();
+  await assert.doesNotReject(page.getByRole("heading", { name: "Klaar voor vandaag?" }).waitFor());
+  assert.equal(await page.locator("dialog.confirm .confirm__body").innerText(), "Jullie 2 foto's gaan in het overzicht.");
   await page.locator("dialog.confirm button[value=yes]").click();
   await page.getByRole("heading", { name: "Magische speurtocht" }).waitFor();
   assert.match(await page.locator(".recap__meta").innerText(), /^2 van 8 gevonden · /);
   assert.equal(await page.locator(".collage .print").count(), 2);
   await page.locator(".collage img.is-loaded").nth(1).waitFor();
+  assert.equal(await page.locator(".stamp").innerText(), "TOCHT AFGEROND");
+  assert.equal(await page.locator(".recap__rest").innerText(), "Nog 6 om te vinden, voor een volgende keer");
 
   // The replaced photo was cleaned up.
   const left = await page.evaluate(async () => (await (await import("/src/lib/photos.js")).listPhotoIds()).length);
@@ -248,9 +251,9 @@ test("a saved walk is never replaced by an empty hunt, and never replaced silent
   await page.getByRole("button", { name: /Kleuren & vormen/ }).click();
   await captureFromLibrary(page, "ronds");
   await captureFromLibrary(page, "driehoek");
-  await page.getByRole("button", { name: "Speurtocht afronden" }).click();
+  await page.getByRole("button", { name: "Klaar met zoeken" }).click();
   // Nothing saved yet, so no warning.
-  assert.equal(await page.locator("dialog.confirm .confirm__body").count(), 0);
+  assert.equal(await page.locator("dialog.confirm .confirm__body").innerText(), "Jullie 2 foto's gaan in het overzicht.");
   await page.locator("dialog.confirm button[value=yes]").click();
   await page.locator(".collage .print").first().waitFor();
   assert.equal(await photoCount(), 2);
@@ -258,7 +261,7 @@ test("a saved walk is never replaced by an empty hunt, and never replaced silent
   // Start a new hunt and finish it without finds: the saved walk survives.
   await page.getByRole("button", { name: /Nog een speurtocht/ }).click();
   await page.getByRole("button", { name: /Natuurspeurtocht/ }).click();
-  await page.getByRole("button", { name: "Speurtocht afronden" }).click();
+  await page.getByRole("button", { name: "Klaar met zoeken" }).click();
   assert.equal(await page.locator("dialog.confirm").getByText("verdwijnt").count(), 0);
   await page.locator("dialog.confirm button[value=yes]").click();
   await page.locator(".lastwalk", { hasText: "Kleuren & vormen" }).waitFor();
@@ -280,7 +283,7 @@ test("a saved walk is never replaced by an empty hunt, and never replaced silent
   // Finishing says so too, and only then replaces it.
   await page.getByRole("button", { name: "Terug" }).click();
   await page.getByRole("button", { name: /Ga verder/ }).click();
-  await page.getByRole("button", { name: "Speurtocht afronden" }).click();
+  await page.getByRole("button", { name: "Klaar met zoeken" }).click();
   await assert.doesNotReject(page.locator("dialog.confirm").getByText(/Kleuren & vormen, verdwijnt dan/).waitFor());
   await page.locator("dialog.confirm button[value=yes]").click();
   await page.getByRole("heading", { name: "Natuurspeurtocht" }).waitFor();

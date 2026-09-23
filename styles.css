@@ -179,14 +179,6 @@ img {
   color: var(--accent-ink);
 }
 
-.section-label {
-  font: 700 13px/1.2 var(--sans);
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  margin-bottom: 12px;
-}
-
 .page-title {
   font: 560 36px/1.05 var(--serif);
   letter-spacing: -0.015em;
@@ -554,8 +546,15 @@ img {
   display: none;
 }
 .next__done-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font: 560 28px/1.1 var(--serif);
-  margin: 6px 0 16px;
+  margin: 0 0 16px;
+}
+.next__star {
+  color: var(--accent);
+  fill: currentColor;
 }
 
 .grid {
@@ -1261,6 +1260,14 @@ dialog::backdrop {
   color: var(--accent-ink);
   transform: rotate(-3deg);
 }
+/* A full board: the same stamp, inked in. */
+.stamp--full {
+  background: var(--accent);
+  color: var(--print);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    inset 0 0 0 3.5px color-mix(in srgb, var(--print) 70%, transparent);
+}
 .burst {
   position: absolute;
   left: 50%;
@@ -1416,25 +1423,12 @@ dialog::backdrop {
   margin-bottom: 4px;
 }
 
+/* What's left, in one quiet line: the recap is about what was found. */
 .recap__rest {
-  margin-top: 38px;
-}
-.recap__rest li {
-  position: relative;
-  padding: 10px 0 10px 24px;
-  border-top: 1px solid var(--line);
-  font: 400 17px/1.3 var(--serif);
+  margin-top: 30px;
+  text-align: center;
+  font: italic 400 17px/1.3 var(--serif);
   color: var(--ink-soft);
-}
-.recap__rest li::before {
-  content: "";
-  position: absolute;
-  left: 2px;
-  top: 16px;
-  width: 10px;
-  height: 10px;
-  border: 1.5px solid var(--ink-faint);
-  border-radius: 50%;
 }
 
 .recap__foot {
@@ -1447,9 +1441,6 @@ dialog::backdrop {
   font-size: 15px;
   color: var(--ink-soft);
   margin-bottom: 10px;
-}
-.recap__foot .privacy {
-  margin-top: 16px;
 }
 
 .noscript {
