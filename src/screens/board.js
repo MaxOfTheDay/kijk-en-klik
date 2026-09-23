@@ -229,8 +229,8 @@ export function mount(root, route, app) {
   // Turns a captured frame or picked file into a draft and shows the preview.
   async function develop(file, source, challengeId, { fromPreview = false } = {}) {
     const processed = await processImage(file);
+    cancelScout();
     if (draft?.url) URL.revokeObjectURL(draft.url);
-    draft?.check?.controller?.abort();
     draft = { huntId: hunt.id, challengeId, source, ...processed, url: URL.createObjectURL(processed.full) };
     // Keep a copy so a refresh on the preview doesn't lose the photo.
     saveDraft({ huntId: hunt.id, challengeId, source, ...processed }).catch(() => {});
@@ -265,59 +265,154 @@ export function mount(root, route, app) {
   // Preview -------------------------------------------------------------------
 
   function renderPreview(c) {
-    startCheck(c);
     preview.innerHTML = `
       <div class="preview__frame">
-        <img src="${draft.url}" alt="Voorbeeld van jullie foto bij: ${esc(c.title)}">
+        <figure class="preview__print" style="--ratio:${draft.width / draft.height || 0.75}">
+          <img src="${draft.url}" alt="Voorbeeld van jullie foto bij: ${esc(c.title)}">
+          <div class="scout" aria-hidden="true"></div>
+          <div class="scout-note" role="status"></div>
+        </figure>
       </div>
       <div class="preview__bar">
         <p id="preview-title" class="preview__label">${esc(c.title)}</p>
-        <p class="preview__check" role="status"></p>
         <p class="preview__error" role="alert"></p>
         <div class="preview__actions"></div>
+        <div class="preview__more"></div>
       </div>`;
-    renderCheck();
+    renderScout();
   }
 
-  // Photo check: a soft second opinion shown on the preview. It runs once per
-  // draft, never disables the buttons, and when there is no answer (offline,
-  // slow, failed) the preview simply stays as it always was.
-  const CHECK_TEXT = {
-    pending: "Even kijken…",
-    YES: "Gevonden!",
-    UNSURE: "Dat zou kunnen! Vind jij dat het telt?",
-    NO: "Hmm… misschien nog even verder zoeken?",
+  // De speurneus ----------------------------------------------------------------
+  // An optional second opinion on the photo, only when the player asks for it.
+  // A short magnifying-glass moment plays on the photo while the check runs;
+  // then a small paper note is pinned to the photo. The buttons never lock:
+  // the photo can be kept at any moment, whatever the speurneus says.
+  //
+  // draft.check: undefined (not asked) | { state: "looking", controller }
+  //            | { state: "YES" | "UNSURE" | "NO" | "lost" }
+
+  const SCOUT_MIN_MS = 2200; // long enough to enjoy, even when the answer is instant
+  const SCOUT_LINES = ["Even speuren…", "Goed kijken…", "Ik denk dat ik iets zie…"];
+  const SCOUT_NOTES = {
+    YES: ["Gevonden!", "Die telt helemaal."],
+    UNSURE: ["Oeh, slim gezien!", "Dat zou best kunnen."],
+    NO: ["Hmm… ik zie het nog niet helemaal.", "Nog eens speuren?"],
+    lost: ["De speurneus is even afgeleid.", "Je kunt je foto gewoon gebruiken."],
   };
+  // Where the magnifying glass pauses to look, in % of the photo. The glass
+  // wanders along these (styles.css, @keyframes scout-wander, uses the same
+  // points); dots and sparkles are placed along the same route.
+  const SCOUT_ROUTE = [[26, 34], [66, 27], [72, 60], [38, 70], [30, 48]];
+  let scoutTimer = null;
 
-  function startCheck(c) {
-    if (draft.check || !photoCheckAvailable()) return;
-    const d = draft;
-    const controller = new AbortController();
-    d.check = { state: "pending", controller };
-    checkChallengePhoto({ challenge: c.title, image: d.full, signal: controller.signal }).then((result) => {
-      if (controller.signal.aborted) return;
-      d.check = { state: result ?? "none" };
-      if (draft === d && preview.open) {
-        renderCheck();
-        if (result === "YES") haptic(12);
-      }
+  function scoutScene() {
+    const dots = [];
+    const sparkles = [];
+    SCOUT_ROUTE.forEach(([x, y], i) => {
+      const [nx, ny] = SCOUT_ROUTE[(i + 1) % SCOUT_ROUTE.length];
+      // Each leg: the glass rests for the first 6% of its fifth of the loop,
+      // then eases to the next point. A dot appears just after it passes.
+      [[0.25, 0.33], [0.5, 0.5], [0.75, 0.67]].forEach(([f, t]) => {
+        const at = (i * 20 + 6 + t * 14) / 100;
+        dots.push(`<span class="scout__dot" style="left:${x + (nx - x) * f}%;top:${y + (ny - y) * f}%;--at:${at}"></span>`);
+      });
+      if (i % 2 === 0) sparkles.push(`<span class="scout__spark" style="left:${x + 7}%;top:${y - 7}%;--at:${(i * 20 + 2) / 100}">${icon("sparkle", { size: 16 })}</span>`);
     });
+    return `
+      <span class="scout__sweep"></span>
+      ${dots.join("")}
+      ${sparkles.join("")}
+      <span class="scout__route"><span class="scout__glass">
+        <span class="scout__lens"></span>
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M26.5 7.5c10.6-.4 19 7.6 19.2 18.1.2 10.9-8.3 19.4-19 19.4C16 45 7.4 36.8 7.5 26.2 7.6 15.9 15.8 7.9 26.5 7.5Z" stroke-width="3.2"/>
+          <path d="M16.5 20.5c1.6-3.4 4.6-5.6 8.2-6.2" stroke-width="2.2" opacity=".75"/>
+          <path d="m40.5 41 13 13.5" stroke-width="6"/>
+        </svg>
+      </span></span>`;
   }
 
-  function renderCheck() {
-    const state = draft?.check?.state ?? "none";
-    const line = preview.querySelector(".preview__check");
-    line.dataset.state = state;
-    line.innerHTML = CHECK_TEXT[state] ? `${state === "YES" ? icon("check", { size: 18 }) : ""}${esc(CHECK_TEXT[state])}` : "";
-    // Same two buttons in the same places; only the wording, and for a "no"
-    // the emphasis, follows the check. Keeping the photo is always one tap.
-    const [retakeLabel, useLabel] = state === "UNSURE" ? ["Nieuwe foto", "Ja, gebruiken"] : state === "NO" ? ["Opnieuw zoeken", "Toch gebruiken"] : ["Opnieuw", "Deze houden"];
+  function scoutBurst() {
+    const bits = [[-30, -26, 11], [-8, -40, 8], [26, -34, 10], [38, -6, 8], [-38, 2, 8]];
+    return `<span class="burst scout-note__burst" aria-hidden="true">${bits
+      .map(([x, y, s], i) => `<span style="--x:${x}px;--y:${y}px;--d:${i * 40 - 400}ms">${icon("sparkle", { size: s })}</span>`)
+      .join("")}</span>`;
+  }
+
+  // Draws the speurneus parts of the preview for the current draft.
+  // `fresh`: the result has just come in (play its small entrance).
+  function renderScout({ fresh = false } = {}) {
+    clearInterval(scoutTimer);
+    const state = draft?.check?.state ?? "idle";
+    preview.dataset.scout = state;
+    const scene = preview.querySelector(".scout");
+    const note = preview.querySelector(".scout-note");
+    note.classList.toggle("is-fresh", fresh);
+
+    if (state === "looking") {
+      scene.innerHTML = scoutScene();
+      let line = 0;
+      note.innerHTML = `<p class="scout-note__line">${SCOUT_LINES[0]}</p>`;
+      scoutTimer = setInterval(() => {
+        line = (line + 1) % SCOUT_LINES.length;
+        note.innerHTML = `<p class="scout-note__line">${SCOUT_LINES[line]}</p>`;
+      }, 1200);
+    } else {
+      scene.innerHTML = "";
+      const [title, text] = SCOUT_NOTES[state] ?? [];
+      note.innerHTML = title
+        ? `${state === "YES" ? `<span class="scout-note__stamp">${icon("check", { size: 16 })}</span>${fresh ? scoutBurst() : ""}` : ""}
+           <p class="scout-note__title">${title}</p>
+           <p class="scout-note__text">${text}</p>`
+        : "";
+    }
+
+    // Same two buttons in the same places. After a "maybe" or a "no" the
+    // retake reads as a new photo; after a "no" it is also the lighter one.
+    // Keeping the photo is always one tap.
+    const [retakeLabel, useLabel] =
+      state === "UNSURE" ? ["Nieuwe foto", "Foto gebruiken"] : state === "NO" ? ["Nieuwe foto", "Toch gebruiken"] : ["Opnieuw", "Foto gebruiken"];
     const [retakeStyle, useStyle] = state === "NO" ? ["btn--primary btn--light", "btn--on-dark"] : ["btn--on-dark", "btn--primary btn--light"];
     const actions = preview.querySelector(".preview__actions");
     actions.classList.toggle("is-even", state === "UNSURE" || state === "NO");
     actions.innerHTML = `
       <button class="btn ${retakeStyle}" data-action="retake">${icon("retake")} ${retakeLabel}</button>
       <button class="btn ${useStyle}" data-action="use">${icon("check")} ${useLabel}</button>`;
+
+    // The invitation, or after an unclear answer a small way to look again.
+    const more = preview.querySelector(".preview__more");
+    if (!photoCheckAvailable()) more.innerHTML = "";
+    else if (state === "idle") more.innerHTML = `<button class="scout-btn" data-action="scout">${icon("sparkle", { size: 18 })} Laat de speurneus kijken</button>`;
+    else if (state === "UNSURE" || state === "NO" || state === "lost") more.innerHTML = `<button class="scout-btn scout-btn--again" data-action="scout">Nog eens kijken</button>`;
+    else more.innerHTML = "";
+  }
+
+  async function scout() {
+    if (busy || !draft || draft.check?.state === "looking") return;
+    const d = draft;
+    const c = getChallenge(hunt, d.challengeId);
+    const controller = new AbortController();
+    d.check = { state: "looking", controller };
+    renderScout();
+    haptic(8);
+    const [result] = await Promise.all([
+      checkChallengePhoto({ challenge: c.title, image: d.full, signal: controller.signal }),
+      new Promise((resolve) => setTimeout(resolve, reducedMotion() ? SCOUT_MIN_MS / 2 : SCOUT_MIN_MS)),
+    ]);
+    if (controller.signal.aborted) return;
+    d.check = { state: result ?? "lost" };
+    if (draft !== d || !preview.open) return;
+    renderScout({ fresh: true });
+    if (result === "YES") haptic([10, 50, 14]);
+  }
+
+  // Stops a check still running (the photo was kept, retaken or dropped).
+  function cancelScout() {
+    clearInterval(scoutTimer);
+    if (draft?.check?.state !== "looking") return;
+    draft.check.controller.abort();
+    draft.check = undefined;
+    if (preview.querySelector(".scout")) renderScout();
   }
 
   function setPreviewError(text) {
@@ -326,12 +421,14 @@ export function mount(root, route, app) {
 
   function retake() {
     if (busy || !draft) return;
+    cancelScout();
     if (draft.source === "live") returnTo(`hunt/${draft.challengeId}/camera`);
     else pickAndDevelop(draft.challengeId, { fromPreview: true });
   }
 
   async function usePhoto() {
     if (busy || !draft) return;
+    cancelScout();
     busy = true;
     preview.classList.add("is-busy");
     const { challengeId } = draft;
@@ -363,8 +460,8 @@ export function mount(root, route, app) {
   }
 
   function discardDraft() {
+    cancelScout();
     if (draft?.url) URL.revokeObjectURL(draft.url);
-    draft?.check?.controller?.abort();
     draft = null;
     clearDraft().catch(() => {});
   }
@@ -564,6 +661,8 @@ export function mount(root, route, app) {
         return retake();
       case "use":
         return usePhoto();
+      case "scout":
+        return scout();
     }
   }
 
@@ -577,8 +676,8 @@ export function mount(root, route, app) {
       barWatch.disconnect();
       pendingLand?.disconnect();
       camera.destroy();
+      cancelScout();
       if (draft?.url) URL.revokeObjectURL(draft.url);
-      draft?.check?.controller?.abort();
     },
   };
 }
