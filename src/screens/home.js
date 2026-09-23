@@ -45,14 +45,12 @@ function onClick(e) {
 function resumeCard(run, hunt) {
   const n = foundCount(run);
   const total = hunt.challenges.length;
-  const slots = hunt.challenges
-    .map((c) => {
-      const find = run.finds[c.id];
-      return find
-        ? `<span class="strip__slot is-found"><img alt="" data-photo-id="${esc(find.photoId)}"></span>`
-        : `<span class="strip__slot"></span>`;
-    })
-    .join("");
+  // Filled by count, like the board's route: photos first, then open slots.
+  const photos = hunt.challenges.map((c) => run.finds[c.id]).filter(Boolean);
+  const slots = [
+    ...photos.map((f) => `<span class="strip__slot is-found"><img alt="" data-photo-id="${esc(f.photoId)}"></span>`),
+    ...Array.from({ length: total - photos.length }, () => `<span class="strip__slot"></span>`),
+  ].join("");
   return `
     <section class="resume" style="--accent:${hunt.accent}" aria-labelledby="resume-title">
       <p class="eyebrow">${icon("compass", { size: 16 })} Onderweg</p>
@@ -61,7 +59,7 @@ function resumeCard(run, hunt) {
       <div class="strip" aria-hidden="true">${slots}</div>
       <button class="btn btn--primary btn--big" data-go="hunt">Ga verder ${icon("arrow")}</button>
     </section>
-    <button class="text-action" data-go="hunts">Andere speurtocht kiezen ${icon("arrow", { size: 18 })}</button>`;
+    <button class="btn btn--quiet" data-go="hunts">Andere speurtocht kiezen</button>`;
 }
 
 function lastWalkCard(run, hunt) {
@@ -76,7 +74,7 @@ function lastWalkCard(run, hunt) {
     <button class="lastwalk" data-go="recap">
       <span class="lastwalk__photos" aria-hidden="true">${photos || icon(hunt.theme, { size: 28 })}</span>
       <span class="lastwalk__text">
-        <span class="lastwalk__label">Vorige tocht</span>
+        <span class="eyebrow eyebrow--muted">Vorige tocht</span>
         <span class="lastwalk__title">${esc(hunt.title)}</span>
         <span class="lastwalk__meta">${n} van ${hunt.challenges.length} · ${formatDate(run.startedAt)}</span>
       </span>
