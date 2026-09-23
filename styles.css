@@ -575,6 +575,8 @@ img {
   width: 100%;
   aspect-ratio: 1;
   padding: 14px;
+  /* Room for the tilt and shadow when a new photo is scrolled into view. */
+  scroll-margin-block: 16px;
   text-align: left;
   background: var(--card);
   border: 1px solid var(--line-strong);
@@ -936,14 +938,6 @@ dialog::backdrop {
   max-width: 560px;
   margin: 0 auto;
   padding: 12px 20px calc(env(safe-area-inset-bottom) + 20px);
-}
-.preview__eyebrow {
-  font: 700 12px/1 var(--sans);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-align: center;
-  color: rgb(255 255 255 / 0.55);
-  margin-bottom: 6px;
 }
 .preview__label {
   font: 500 19px/1.25 var(--serif);

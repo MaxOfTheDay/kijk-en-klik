@@ -44,7 +44,7 @@ function openChallenge(page, title) {
 
 async function accept(page, title) {
   await page.locator("dialog.preview[open] img").waitFor();
-  await page.getByRole("button", { name: "Gebruiken" }).click();
+  await page.locator("dialog.preview[open]").getByRole("button", { name: "Deze houden" }).click();
   await page.locator(".grid .card.is-found", { hasText: title }).waitFor();
   await page.locator("dialog[open]").first().waitFor({ state: "detached" }).catch(() => {});
 }

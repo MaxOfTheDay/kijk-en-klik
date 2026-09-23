@@ -241,12 +241,11 @@ export function mount(root, route, app) {
         <img src="${draft.url}" alt="Voorbeeld van jullie foto bij: ${esc(c.title)}">
       </div>
       <div class="preview__bar">
-        <p class="preview__eyebrow">Voorbeeld</p>
         <p id="preview-title" class="preview__label">${esc(c.title)}</p>
         <p class="preview__error" role="alert"></p>
         <div class="preview__actions">
           <button class="btn btn--on-dark" data-action="retake">${icon("retake")} Opnieuw</button>
-          <button class="btn btn--primary btn--light" data-action="use">${icon("check")} Gebruiken</button>
+          <button class="btn btn--primary btn--light" data-action="use">${icon("check")} Deze houden</button>
         </div>
       </div>`;
   }
