@@ -78,8 +78,32 @@ render(first);
 welcomeBack(first);
 sweepOrphans();
 
+// Updates: a new release installs a new service worker, which takes over
+// right away. Reload into it when nothing is in progress: now if no layer
+// is open, otherwise the next time the app goes to the background (a draft
+// photo survives a reload). Installed apps are often resumed rather than
+// relaunched, so also check for a release whenever the app comes back.
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  let updatePending = false;
+  const reloadIfIdle = () => {
+    if (updatePending && (document.hidden || !document.querySelector("dialog[open]"))) location.reload();
+  };
+  let controlled = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // The very first worker taking control is an install, not an update.
+    if (!controlled) return void (controlled = true);
+    updatePending = true;
+    reloadIfIdle();
+  });
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker
+      .register("./sw.js")
+      .then((reg) => {
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) reloadIfIdle();
+          else reg.update().catch(() => {});
+        });
+      })
+      .catch(() => {});
   });
 }
