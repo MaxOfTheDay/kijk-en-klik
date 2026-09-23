@@ -80,7 +80,7 @@ export function mount(root, route, app) {
       return `
         <button class="card is-found" data-open="${esc(c.id)}" data-photo-frame style="--tilt:${TILTS[i % TILTS.length]}deg">
           <img class="card__photo" alt="" data-photo-id="${esc(find.photoId)}">
-          <span class="card__stamp" aria-hidden="true">${icon("check", { size: 18 })}</span>
+          <span class="card__stamp" aria-hidden="true">${icon("check", { size: 16 })}</span>
           <span class="card__label"><span class="card__title">${esc(c.title)}</span></span>
           <span class="visually-hidden">— gevonden</span>
         </button>`;

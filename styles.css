@@ -635,8 +635,8 @@ img {
   position: absolute;
   inset: 8px;
   pointer-events: none;
-  --c: color-mix(in srgb, var(--line-strong) 32%, transparent);
-  --arm: 12px;
+  --c: color-mix(in srgb, var(--line-strong) 27%, transparent);
+  --arm: 10.5px;
   background:
     linear-gradient(var(--c), var(--c)) top left / var(--arm) 2px,
     linear-gradient(var(--c), var(--c)) top left / 2px var(--arm),
@@ -648,18 +648,21 @@ img {
     linear-gradient(var(--c), var(--c)) bottom right / 2px var(--arm);
   background-repeat: no-repeat;
 }
-/* Marker: the challenge number in a thin, quiet ring. A checkpoint, and
-   deliberately softer than the clue beside it. */
+/* Marker: an index number in a small tinted disc with an even ring. Upright
+   lining figures for legibility; clearly quieter than the clue beside it. */
 .card__num {
   grid-area: num;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  width: 24px;
+  height: 24px;
+  border: 1.25px solid color-mix(in srgb, var(--accent) 42%, transparent);
   border-radius: 50%;
-  font: italic 500 12px/1 var(--serif);
-  color: color-mix(in srgb, var(--accent-ink) 78%, var(--card));
+  background: color-mix(in srgb, var(--accent) 7%, var(--card));
+  font: 560 11px/1 var(--serif);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--accent-ink) 85%, var(--card));
 }
 /* Clue: the challenge's icon, the one recognisable picture on an empty card. */
 /* Set in from the corner, so it sits in the card rather than on its edge. */
@@ -668,7 +671,7 @@ img {
   display: grid;
   align-self: start;
   justify-self: end;
-  margin: 8px 7px 0 0;
+  margin: 12px 7px 0 0;
   color: var(--accent);
 }
 .card__icon .icon {
@@ -687,17 +690,17 @@ img {
   letter-spacing: -0.005em;
   overflow-wrap: anywhere;
 }
-/* Metadata beside the marker: a small, quiet chip. */
+/* Metadata beside the marker, read as one cluster: a small, quiet chip. */
 .card__tag {
   grid-area: tag;
-  margin-left: 8px;
+  margin-left: 6px;
   padding: 3px 5px 2px;
   border-radius: 999px;
-  background: var(--accent-wash);
-  font: 700 10px/1 var(--sans);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  font: 700 9.5px/1 var(--sans);
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--accent-ink);
+  color: color-mix(in srgb, var(--accent-ink) 88%, var(--card));
 }
 
 /* A found card: the photo takes over, pinned slightly askew, with a stamp. */
@@ -726,19 +729,22 @@ img {
 .card__photo.is-loaded {
   opacity: 1;
 }
+/* The caption is a field note, set like the recap's photo captions (italic
+   serif), on the same left edge as an empty card's prompt (4px frame + 12px
+   padding = the empty card's 16px). */
 .card.is-found .card__label {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 7px 8px 8px;
+  padding: 8px 12px 10px;
   background: rgb(255 253 248 / 0.95);
 }
 .card.is-found .card__title {
   min-height: 0;
   margin: 0;
   padding: 0;
-  font: 600 14px/1.25 var(--sans);
+  font: italic 450 14px/1.22 var(--serif);
   hyphens: auto;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -751,15 +757,14 @@ img {
   right: 8px;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 31px;
+  height: 31px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
   box-shadow:
-    0 0 0 2px var(--print),
-    0 0 0 3.5px var(--accent),
-    0 3px 8px rgb(0 0 0 / 0.25);
+    0 0 0 1.5px var(--print),
+    0 2px 6px rgb(0 0 0 / 0.2);
   transform: rotate(-12deg);
 }
 .card__stamp .icon {
@@ -1531,7 +1536,17 @@ dialog::backdrop {
     margin: 5px 2px 0 0;
   }
   .card__tag {
-    margin-left: 6px;
+    margin-left: 5px;
+  }
+}
+
+/* Larger cards (about 180px) have room to lift the prompt a little more. */
+@media (min-width: 400px) {
+  .card__icon {
+    margin-top: 16px;
+  }
+  .card:not(.is-found) {
+    padding-bottom: 34px;
   }
 }
 
