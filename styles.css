@@ -57,6 +57,12 @@
   --print-shadow: 0 1px 1px rgb(40 30 10 / 0.08), 0 13px 26px -15px rgb(60 40 10 / 0.52);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --gutter: 20px;
+  /* Vertical rhythm: within a group, between siblings, between the bands
+     of a page, and the pause before a page's main action. */
+  --space-tight: 8px;
+  --space: 12px;
+  --space-section: 24px;
+  --space-major: 32px;
 
   color-scheme: light;
 }
@@ -261,6 +267,8 @@ img {
 }
 .home__other {
   gap: 6px;
+  min-height: 44px;
+  margin-top: var(--space-section);
   font-size: 16px;
 }
 .home__other .icon {
@@ -277,15 +285,25 @@ img {
 
 /* Home --------------------------------------------------------------------- */
 
+/* Three bands, separated by whitespace alone: the intro, the one main
+   action (start, or the hunt in progress), and the quieter way elsewhere. */
 .home {
   display: flex;
   flex-direction: column;
-  gap: 14px;
   min-height: 100dvh;
 }
 /* The hero reads as one block: brand, proposition, explanation, route. */
 .home__head {
   padding-top: 4px;
+  margin-bottom: var(--space-major);
+}
+.home__start {
+  min-height: 56px;
+}
+/* With no hunt under way the previous one follows the start button
+   directly, after the same pause the "choose another" link gets. */
+.home__start + .lastwalk {
+  margin-top: var(--space-major);
 }
 .wordmark {
   display: flex;
@@ -307,7 +325,7 @@ img {
   line-height: 0.96;
   font-variation-settings: "SOFT" 60;
   letter-spacing: -0.02em;
-  margin: 12px 0 6px;
+  margin: 10px 0 var(--space);
 }
 .home__title em {
   font-style: italic;
@@ -327,19 +345,19 @@ img {
   width: min(100%, 176px);
   height: auto;
   /* The drawing sits in the middle of its box; trim the empty band around it. */
-  margin: 2px 0 -7px;
+  margin: 4px 0 -7px;
   color: var(--accent);
   opacity: 0.8;
 }
 .home__foot {
   margin-top: auto;
-  padding-top: 28px;
+  padding-top: var(--space-major);
 }
 
 /* The page's main object. It uses the app's own green (not the hunt's
    colour, which belongs to the hunt's own screens). */
 .resume {
-  padding: 18px 18px 16px;
+  padding: 16px 18px 16px;
   background: var(--card);
   border: 1.5px solid var(--accent-line);
   border-radius: var(--radius-lg);
@@ -348,8 +366,9 @@ img {
 .resume__title {
   font: var(--type-title);
   font-size: 28px;
+  line-height: 1.05;
   letter-spacing: -0.015em;
-  margin: 6px 0 2px;
+  margin: var(--space-tight) 0 2px;
 }
 .resume__count {
   color: var(--ink-soft);
@@ -364,14 +383,15 @@ img {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 12px 0 14px;
+  min-height: 34px;
+  margin: var(--space) 0 18px;
 }
 .strip__slot {
   flex: 0 1 20px;
   min-width: 0;
   aspect-ratio: 1;
   border-radius: 5px;
-  border: 1px dashed color-mix(in srgb, var(--line-strong) 60%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--line-strong) 45%, transparent);
   overflow: hidden;
 }
 .strip__slot.is-found {
@@ -393,12 +413,12 @@ img {
   align-items: center;
   gap: 12px;
   width: 100%;
-  margin-top: 10px;
-  padding: 10px 14px;
+  margin-top: var(--space);
+  padding: 8px 14px 8px 10px;
   text-align: left;
-  background: color-mix(in srgb, var(--card) 40%, transparent);
-  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--card) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  border-radius: var(--radius);
   transition: transform 0.12s ease;
 }
 .lastwalk:active {
@@ -408,20 +428,20 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 46px;
-  height: 46px;
+  min-width: 40px;
+  height: 40px;
   color: var(--ink-mute);
 }
 .lastwalk__photos img {
-  width: 32px;
-  height: 40px;
+  width: 27px;
+  height: 34px;
   object-fit: cover;
   border: 2px solid var(--print);
   box-shadow: 0 1px 4px rgb(60 40 10 / 0.18);
   background: var(--paper-deep);
 }
 .lastwalk__photos img + img {
-  margin-left: -17px;
+  margin-left: -14px;
 }
 .lastwalk__photos img:nth-child(1) {
   transform: rotate(-5deg);
@@ -434,17 +454,18 @@ img {
 }
 .lastwalk__text {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 .lastwalk__title {
-  font: 560 17px/1.15 var(--serif);
+  font: 560 16px/1.15 var(--serif);
+  color: var(--ink-soft);
 }
 .lastwalk__meta {
-  font-size: 14px;
-  color: var(--ink-soft);
+  font-size: 13px;
+  color: var(--ink-mute);
 }
 .lastwalk__arrow {
-  color: var(--ink-soft);
+  color: var(--ink-mute);
 }
 
 /* Hunt picker -------------------------------------------------------------- */
