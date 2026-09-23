@@ -563,77 +563,97 @@ img {
   gap: 14px 12px;
 }
 /* One square geometry before and after the photo, so the grid never jumps.
-   Empty: number and icon on top, the prompt anchored to the bottom. */
+   Empty, read top to bottom: marker (number, plus "Samen" when it applies)
+   and the challenge's clue (its icon) at opposite ends of the top line, open
+   space, then the prompt in a fixed lower text zone. */
 .card {
   position: relative;
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto 1fr;
-  align-items: start;
-  column-gap: 8px;
+  grid-template-columns: auto auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "num tag clue"
+    ". . ."
+    "title title title";
+  align-items: center;
   width: 100%;
   aspect-ratio: 1;
-  padding: 14px;
+  padding: 16px 16px 18px;
   /* Room for the tilt and shadow when a new photo is scrolled into view. */
   scroll-margin-block: 16px;
   text-align: left;
   background: var(--card);
   border: 1px solid var(--line-strong);
-  /* Slightly uneven corners, like cut paper. */
   border-radius: var(--radius);
   transition: transform 0.12s ease;
 }
 .card:active {
   transform: scale(0.97);
 }
-/* An empty photo slot: viewfinder corners, waiting for a discovery. */
+/* An empty photo slot: viewfinder corners, waiting for a discovery. They
+   frame the card; they stay quieter than anything inside it. */
 .card:not(.is-found)::after {
   content: "";
   position: absolute;
   inset: 8px;
   pointer-events: none;
-  --c: color-mix(in srgb, var(--line-strong) 45%, transparent);
+  --c: color-mix(in srgb, var(--line-strong) 36%, transparent);
+  --arm: 12px;
   background:
-    linear-gradient(var(--c), var(--c)) top left / 16px 2px,
-    linear-gradient(var(--c), var(--c)) top left / 2px 16px,
-    linear-gradient(var(--c), var(--c)) top right / 16px 2px,
-    linear-gradient(var(--c), var(--c)) top right / 2px 16px,
-    linear-gradient(var(--c), var(--c)) bottom left / 16px 2px,
-    linear-gradient(var(--c), var(--c)) bottom left / 2px 16px,
-    linear-gradient(var(--c), var(--c)) bottom right / 16px 2px,
-    linear-gradient(var(--c), var(--c)) bottom right / 2px 16px;
+    linear-gradient(var(--c), var(--c)) top left / var(--arm) 2px,
+    linear-gradient(var(--c), var(--c)) top left / 2px var(--arm),
+    linear-gradient(var(--c), var(--c)) top right / var(--arm) 2px,
+    linear-gradient(var(--c), var(--c)) top right / 2px var(--arm),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--arm) 2px,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px var(--arm),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--arm) 2px,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px var(--arm);
   background-repeat: no-repeat;
 }
-/* Expedition marker: the challenge number in a dashed ring. */
+/* Marker: the challenge number in a dashed ring, a checkpoint rather than
+   the main visual. */
 .card__num {
+  grid-area: num;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  margin: 4px 0 0 4px;
+  width: 28px;
+  height: 28px;
   border: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent);
   border-radius: 50%;
-  font: italic 560 14px/1 var(--serif);
+  font: italic 560 13px/1 var(--serif);
   color: var(--accent-ink);
 }
+/* Clue: the challenge's icon, the one recognisable picture on an empty card. */
 .card__icon {
+  grid-area: clue;
+  justify-self: end;
+  margin-right: 3px;
   color: var(--accent);
-  margin-top: 6px;
 }
+.card__icon .icon {
+  width: 34px;
+  height: 34px;
+}
+/* Lower text zone: always three lines tall and filled from the top, so one-,
+   two- and three-line prompts all start on the same line. A rare four-line
+   prompt grows upward into the open space. */
 .card__title {
-  grid-column: 1 / -1;
+  grid-area: title;
   align-self: end;
-  padding: 0 2px 2px;
+  min-height: calc(3 * 1.2em);
   font: 500 17px/1.2 var(--serif);
   letter-spacing: -0.005em;
   overflow-wrap: anywhere;
 }
+/* Metadata beside the marker: a small, quiet chip. */
 .card__tag {
-  position: absolute;
-  top: 20px;
-  right: 16px;
-  font: 700 11px/1 var(--sans);
-  letter-spacing: 0.08em;
+  grid-area: tag;
+  margin-left: 5px;
+  padding: 3px 6px 2px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  font: 700 10px/1 var(--sans);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent-ink);
 }
@@ -673,6 +693,7 @@ img {
   background: rgb(255 253 248 / 0.95);
 }
 .card.is-found .card__title {
+  min-height: 0;
   margin: 0;
   padding: 0;
   font: 600 14px/1.25 var(--sans);
@@ -1451,15 +1472,30 @@ dialog::backdrop {
   }
 }
 
+/* Narrow phones: a slightly smaller prompt keeps long ones out of the clue. */
+@media (max-width: 370px) {
+  .card__title {
+    font-size: 16px;
+  }
+  .card__icon {
+    margin-right: 0;
+  }
+  .card__icon .icon {
+    width: 32px;
+    height: 32px;
+  }
+  .card__tag {
+    margin-left: 4px;
+    padding-inline: 5px;
+  }
+}
+
 @media (max-width: 350px) {
   :root {
     --gutter: 16px;
   }
   .grid {
     gap: 10px;
-  }
-  .card__title {
-    font-size: 16px;
   }
   .hunt-card {
     grid-template-columns: 44px 1fr auto;

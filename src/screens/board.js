@@ -88,7 +88,7 @@ export function mount(root, route, app) {
     return `
       <button class="card" data-open="${esc(c.id)}">
         <span class="card__num" aria-hidden="true">${num}</span>
-        <span class="card__icon">${icon(c.icon, { size: 28 })}</span>
+        <span class="card__icon" aria-hidden="true">${icon(c.icon, { size: 34 })}</span>
         <span class="card__title">${esc(c.title)}</span>
         ${c.type === "together" ? `<span class="card__tag">Samen</span>` : ""}
         <span class="visually-hidden">— nog niet gevonden</span>
