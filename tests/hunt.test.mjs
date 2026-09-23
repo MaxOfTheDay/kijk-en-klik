@@ -293,6 +293,54 @@ test("a saved walk is never replaced by an empty hunt, and never replaced silent
   await context.close();
 });
 
+test("a new release reaches an open app, without interrupting a capture", async () => {
+  const context = await browser.newContext({ ...devices["Pixel 7"] });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  const caches = () => page.evaluate(() => caches.keys());
+  // What a phone does when the app comes back to the foreground.
+  const checkForUpdate = () => page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r.update()));
+
+  await page.goto(BASE);
+  await page.waitForFunction(() => navigator.serviceWorker.controller);
+  const first = await caches();
+  assert.equal(first.length, 1);
+
+  // Nothing open: the app reloads into the new version straight away.
+  await page.evaluate(() => (window.__before = true));
+  server.release();
+  const reloaded = page.waitForEvent("load");
+  await checkForUpdate();
+  await reloaded;
+  assert.equal(await page.evaluate(() => window.__before), undefined);
+  const second = await caches();
+  assert.equal(second.length, 1);
+  assert.notDeepEqual(second, first);
+
+  // A layer is open (mid-capture): wait until the app goes to the background.
+  await page.getByRole("button", { name: /Start een speurtocht/ }).click();
+  await page.getByRole("button", { name: /Gekke vondsten/ }).click();
+  await openChallenge(page, "wolk");
+  await page.evaluate(() => (window.__before = true));
+  server.release();
+  await checkForUpdate();
+  await page.waitForFunction((old) => caches.keys().then((k) => k.length === 1 && k[0] !== old), second[0]);
+  await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(() => window.__before), true);
+  const hidden = page.waitForEvent("load");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await hidden;
+  // Back where they were: the sheet for the same challenge.
+  await page.locator("dialog.sheet[open]", { hasText: "wolk" }).waitFor();
+
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 test("the manifest is installable", async () => {
   const res = await fetch(`${BASE}manifest.webmanifest`);
   const manifest = await res.json();

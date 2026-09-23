@@ -1,10 +1,13 @@
-// Offline support: the whole app is a handful of static files, so we cache
-// them all up front and serve them from the cache, refreshing each one in the
-// background when there's a connection (stale-while-revalidate).
+// Offline support: the whole app is a handful of static files, cached
+// together per release and served cache-first, so one launch never mixes
+// files from two versions.
 //
-// Bump VERSION when files are added or removed below.
+// VERSION is stamped with the commit on deploy (.github/workflows/pages.yml)
+// and with the start time by `npm start`, so every release is a new service
+// worker. The browser installs it, it takes over, and the page reloads into
+// the new version (see src/app.js). Add new files to APP_SHELL below.
 
-const VERSION = "v2";
+const VERSION = "dev";
 const CACHE = `kijk-en-klik-${VERSION}`;
 
 const APP_SHELL = [
@@ -43,7 +46,9 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(APP_SHELL))
+      // Straight from the network: GitHub Pages lets browsers keep files for
+      // 10 minutes, and a new version must not be built from old files.
+      .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" }))))
       .then(() => self.skipWaiting()),
   );
 });
@@ -68,17 +73,7 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.open(CACHE).then(async (cache) => {
       const cached = await cache.match(key, { ignoreSearch: true });
-      const refresh = fetch(request)
-        .then((response) => {
-          if (response.ok) cache.put(key, response.clone());
-          return response;
-        })
-        .catch(() => null);
-      if (cached) {
-        event.waitUntil(refresh);
-        return cached;
-      }
-      return (await refresh) ?? Response.error();
+      return cached ?? fetch(request).catch(() => Response.error());
     }),
   );
 });

@@ -19,6 +19,10 @@ const types = {
   ".woff2": "font/woff2",
 };
 
+// Each server start is a new "release" for the service worker; tests can
+// publish another one with server.release().
+let release = Date.now();
+
 export function serve(p = port) {
   const server = createServer(async (req, res) => {
     const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^([/\\])+/, "");
@@ -28,13 +32,15 @@ export function serve(p = port) {
       return;
     }
     try {
-      const body = await readFile(file);
+      let body = await readFile(file);
+      if (path === "sw.js") body = String(body).replace('const VERSION = "dev";', `const VERSION = "dev-${release}";`);
       res.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream", "cache-control": "no-cache" });
       res.end(body);
     } catch {
       res.writeHead(404).end("Not found");
     }
   });
+  server.release = () => (release += 1);
   return new Promise((resolve) => server.listen(p, () => resolve(server)));
 }
 

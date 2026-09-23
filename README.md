@@ -27,6 +27,12 @@ Pages on every push to `main`. One-time setup: in the repo go to **Settings →
 Pages → Build and deployment** and set **Source** to **GitHub Actions**. The app
 uses relative paths, so it works at `https://<user>.github.io/kijk-en-klik/`.
 
+Each deploy stamps `sw.js` with the commit, so every release is a new service
+worker. Installed apps pick it up on their next launch, or when they come back
+to the foreground, and reload into it when nothing is open (otherwise the next
+time the app goes to the background). `npm start` stamps a new version on each
+server start. New files must be added to `APP_SHELL` in `sw.js`.
+
 ```sh
 npm install          # dev only: Playwright, for tests and icon rendering
 npm test             # end-to-end: live camera, picker fallback, reload, recap, offline

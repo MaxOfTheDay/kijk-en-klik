@@ -42,6 +42,11 @@ jobs:
         run: |
           mkdir _site
           cp -r index.html styles.css manifest.webmanifest sw.js src fonts icons _site/
+      # Every deploy is a new service worker, so installed apps update.
+      - name: Stamp the service worker version
+        run: |
+          sed -i "s/const VERSION = \"dev\";/const VERSION = \"${GITHUB_SHA::8}\";/" _site/sw.js
+          grep -q "const VERSION = \"${GITHUB_SHA::8}\";" _site/sw.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
