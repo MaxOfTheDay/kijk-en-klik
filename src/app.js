@@ -56,7 +56,7 @@ function welcomeBack(route) {
   const hunt = run && getHunt(run.huntId);
   const n = foundCount(run);
   if (hunt && n > 0 && (route.name === "home" || route.name === "board")) {
-    toast(`Welcome back — ${n} of ${hunt.challenges.length} already found.`);
+    toast(`Daar ben je weer! ${n} van ${hunt.challenges.length} al gevonden.`);
   }
 }
 

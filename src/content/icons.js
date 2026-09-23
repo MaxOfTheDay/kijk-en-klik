@@ -44,6 +44,9 @@ const PATHS = {
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/>',
+  compass: '<circle cx="12" cy="12" r="8.5"/><path d="m14.8 9.2-1.6 4-4 1.6 1.6-4Z"/><path d="M12 3.5v1.5M12 19v1.5M3.5 12H5M19 12h1.5"/>',
+  switch: '<path d="M4.5 9.5A7.5 7.5 0 0 1 18 7.2L19.5 9"/><path d="M19.5 4.5V9H15"/><path d="M19.5 14.5A7.5 7.5 0 0 1 6 16.8L4.5 15"/><path d="M4.5 19.5V15H9"/>',
+  flag: '<path d="M6 21V4"/><path d="M6 4.5c3-1.5 5 1.5 8 0s3.5-.5 4.5 0v8c-1-.5-1.5-1.5-4.5 0s-5-1.5-8 0"/>',
   retake: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/>',
 };
 
@@ -51,4 +54,18 @@ export function icon(name, { size = 24, label = "", className = "" } = {}) {
   const body = PATHS[name] ?? PATHS.star;
   const a11y = label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"';
   return `<svg class="icon ${className}" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ${a11y}>${body}</svg>`;
+}
+
+// Decorative dotted route, used as a quiet explorer's-notebook accent.
+// Drawn in currentColor so it takes the hunt's accent.
+export function trail({ className = "", end = "star" } = {}) {
+  const marks = {
+    star: '<path d="m292 10 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z" fill="currentColor" stroke="none"/>',
+    cross: '<path d="m286 12 11 11M297 12l-11 11" stroke-width="2.4"/>',
+  };
+  return `<svg class="trail ${className}" viewBox="0 0 304 36" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="8" cy="24" r="3.2" fill="currentColor" stroke="none"/>
+    <path d="M16 23c28-16 52 10 84 2s46-20 78-12 50 16 74 10 20-4 28-6" stroke-width="1.8" stroke-dasharray="0.5 7"/>
+    ${marks[end]}
+  </svg>`;
 }

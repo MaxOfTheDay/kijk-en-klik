@@ -4,6 +4,9 @@ A photo scavenger hunt for family walks. Pick a hunt, head outside, and snap eac
 discovery as you find it. The board fills up with your own photos, and you finish
 with a recap of the walk.
 
+The interface and all hunt content are in Dutch. This README is in English for
+developers.
+
 - No accounts, no backend, no uploads. Photos stay on the device.
 - Installable PWA that works offline once it has loaded.
 - Plain HTML, CSS and ES modules. There is no build step and no runtime dependencies.
@@ -26,7 +29,7 @@ uses relative paths, so it works at `https://<user>.github.io/kijk-en-klik/`.
 
 ```sh
 npm install          # dev only: Playwright, for tests and icon rendering
-npm test             # end-to-end: play, reload, finish early, recap, offline
+npm test             # end-to-end: live camera, picker fallback, reload, recap, offline
 npm run icons        # re-render PNG icons from scripts/icon-art.mjs
 ```
 
@@ -46,11 +49,13 @@ src/
     state.js             hunt progress (small JSON in localStorage)
     photos.js            photo blobs + unsaved draft (IndexedDB)
     image.js             resize/re-encode photos, fix orientation
-    capture.js           camera / photo library via the native file input
+    camera.js            live camera stream helpers (getUserMedia)
+    capture.js           native "take or choose" file picker (fallback)
     nav.js               tiny hash router with a history "trail"
     recap.js             recap as plain data (ready for a future export)
     ui.js                toast, confirm dialog, haptics, escaping
-  screens/               home, hunts (picker), board (+ sheet & preview), recap
+  screens/               home, hunts (picker), board (+ sheet & preview),
+                         camera (in-app viewfinder), recap
 ```
 
 Each layer has one job:
@@ -65,7 +70,8 @@ Each layer has one job:
 
 ### Adding or editing a hunt
 
-Edit `src/content/hunts.js`. A hunt needs an `id`, `title`, `description`, a
+Edit `src/content/hunts.js`. Write prompts in short, natural Dutch that works
+when read aloud to a 5–8 year old. A hunt needs an `id`, `title`, `description`, a
 `theme` (an icon key), an `accent` colour and about 8 `challenges`. The order of
 the challenges sets the pacing and decides what "Try this next" suggests. Don't
 rename `id`s after release, because saved progress refers to them. New icons go
@@ -73,9 +79,16 @@ in `src/content/icons.js`.
 
 ### Photos
 
-- Taking a photo opens the phone's own camera app through
-  `<input type="file" accept="image/*" capture>`. "Choose from photos" uses the
-  same input without `capture`. On desktop the app leads with "Choose a photo".
+- **Foto maken** opens an in-app camera (`getUserMedia`, rear camera by
+  default). It shows a 3:4 viewfinder with the prompt on top, a shutter, and a
+  button to switch cameras when there is more than one. The saved photo is
+  exactly the frame shown in the viewfinder. The stream stops as soon as the
+  camera closes or the app goes to the background.
+- If the browser has no live camera, or the camera is refused or busy, the
+  camera screen offers **Foto maken of kiezen** instead. That opens the native
+  picker, where the phone lets you take a photo or choose one. After a refusal,
+  the sheet goes straight to that option for the rest of the session. **Kies uit
+  je foto's** is always there as a second option.
 - Each photo is decoded with its EXIF orientation applied, then saved twice: a
   1600px JPEG for the preview and recap, and a 640px thumbnail for the board.
   Together that is about 250–450 KB, so an 8–12 photo hunt uses a few MB.

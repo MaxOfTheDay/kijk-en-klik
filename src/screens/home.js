@@ -1,6 +1,6 @@
 import { getActive, getLast, foundCount } from "../lib/state.js";
 import { getHunt } from "../content/hunts.js";
-import { icon } from "../content/icons.js";
+import { icon, trail } from "../content/icons.js";
 import { go } from "../lib/nav.js";
 import { esc, privacyNote } from "../lib/ui.js";
 import { formatDate } from "../lib/recap.js";
@@ -16,13 +16,14 @@ export function mount(root) {
     <main class="screen home">
       <header class="home__head">
         <p class="wordmark">${icon("camera", { size: 20 })}<span>Kijk <i>&amp;</i> Klik</span></p>
-        <h1 class="home__title">Go for a walk.<br>Find things.<br>Fill the board.</h1>
-        <p class="home__lede">A photo scavenger hunt for families. Pick a hunt, head outside, and snap each discovery as you find it.</p>
+        <h1 class="home__title">Ga op pad.<br>Kijk goed.<br><em>Klik!</em></h1>
+        <p class="home__lede">Een fotospeurtocht voor het hele gezin. Kies een tocht, ga naar buiten en maak een foto van alles wat je vindt.</p>
+        ${trail({ className: "home__trail", end: "cross" })}
       </header>
 
       ${activeHunt ? resumeCard(active, activeHunt) : `
         <button class="btn btn--primary btn--big" data-go="hunts">
-          Start a hunt ${icon("arrow")}
+          Start een speurtocht ${icon("arrow")}
         </button>`}
 
       ${lastHunt ? lastWalkCard(last, lastHunt) : ""}
@@ -54,13 +55,13 @@ function resumeCard(run, hunt) {
     .join("");
   return `
     <section class="resume" style="--accent:${hunt.accent}" aria-labelledby="resume-title">
-      <p class="eyebrow">${icon(hunt.theme, { size: 16 })} Hunt in progress</p>
+      <p class="eyebrow">${icon("compass", { size: 16 })} Onderweg</p>
       <h2 id="resume-title" class="resume__title">${esc(hunt.title)}</h2>
-      <p class="resume__count">${n === 0 ? `${total} things to find` : `${n} of ${total} found`}</p>
+      <p class="resume__count">${n === 0 ? `${total} dingen om te vinden` : `${n} van ${total} gevonden`}</p>
       <div class="strip" aria-hidden="true">${slots}</div>
-      <button class="btn btn--primary btn--big" data-go="hunt">Continue hunt ${icon("arrow")}</button>
+      <button class="btn btn--primary btn--big" data-go="hunt">Ga verder ${icon("arrow")}</button>
     </section>
-    <button class="btn btn--quiet" data-go="hunts">Start a different hunt</button>`;
+    <button class="btn btn--quiet" data-go="hunts">Andere speurtocht kiezen</button>`;
 }
 
 function lastWalkCard(run, hunt) {
@@ -75,9 +76,9 @@ function lastWalkCard(run, hunt) {
     <button class="lastwalk" style="--accent:${hunt.accent}" data-go="recap">
       <span class="lastwalk__photos" aria-hidden="true">${photos || icon(hunt.theme, { size: 28 })}</span>
       <span class="lastwalk__text">
-        <span class="eyebrow">Your last walk</span>
+        <span class="eyebrow">Je laatste tocht</span>
         <span class="lastwalk__title">${esc(hunt.title)}</span>
-        <span class="lastwalk__meta">${n} of ${hunt.challenges.length} · ${formatDate(run.startedAt)}</span>
+        <span class="lastwalk__meta">${n} van ${hunt.challenges.length} · ${formatDate(run.startedAt)}</span>
       </span>
       ${icon("arrow", { className: "lastwalk__arrow" })}
     </button>`;

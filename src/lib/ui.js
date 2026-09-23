@@ -27,7 +27,7 @@ export function toast(message) {
 }
 
 // A light confirm using <dialog>. Resolves true when confirmed.
-export function confirmDialog({ title, body = "", confirm, cancel = "Not now" }) {
+export function confirmDialog({ title, body = "", confirm, cancel = "Niet nu" }) {
   return new Promise((resolve) => {
     const dialog = document.createElement("dialog");
     dialog.className = "confirm";
@@ -54,5 +54,5 @@ export function confirmDialog({ title, body = "", confirm, cancel = "Not now" })
 }
 
 export function privacyNote() {
-  return `<p class="privacy">${icon("lock", { size: 16 })}<span>Photos stay on this phone. Nothing is uploaded.</span></p>`;
+  return `<p class="privacy">${icon("lock", { size: 16 })}<span>Je foto's blijven op dit toestel. Er wordt niets geüpload.</span></p>`;
 }

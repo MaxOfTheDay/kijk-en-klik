@@ -9,10 +9,10 @@ export function mount(root) {
   root.innerHTML = `
     <main class="screen hunts">
       <header class="topbar">
-        <button class="icon-btn" data-action="back" aria-label="Back">${icon("back")}</button>
+        <button class="icon-btn" data-action="back" aria-label="Terug">${icon("back")}</button>
       </header>
-      <h1 class="page-title">Choose a hunt</h1>
-      <p class="page-lede">Every hunt is a board of things to find. Do them in any order.</p>
+      <h1 class="page-title">Kies een speurtocht</h1>
+      <p class="page-lede">Elke tocht is een bord vol dingen om te vinden. In welke volgorde je maar wilt.</p>
       <ul class="hunt-list">
         ${HUNTS.map(
           (h) => `
@@ -22,7 +22,7 @@ export function mount(root) {
               <span class="hunt-card__body">
                 <span class="hunt-card__title">${esc(h.title)}</span>
                 <span class="hunt-card__desc">${esc(h.description)}</span>
-                <span class="hunt-card__meta">${h.challenges.length} things to find</span>
+                <span class="hunt-card__meta">${h.challenges.length} dingen om te vinden</span>
               </span>
               ${icon("arrow", { className: "hunt-card__arrow" })}
             </button>
@@ -40,10 +40,10 @@ export function mount(root) {
     const activeHunt = active && getHunt(active.huntId);
     if (activeHunt && foundCount(active) > 0) {
       const ok = await confirmDialog({
-        title: `Start ${hunt.title}?`,
-        body: `Your ${activeHunt.title} will be wrapped up with ${foundCount(active)} of ${activeHunt.challenges.length} found, and kept as your last walk.`,
-        confirm: `Start ${hunt.title}`,
-        cancel: "Keep current hunt",
+        title: `Beginnen met ${hunt.title}?`,
+        body: `Je ${activeHunt.title} wordt afgerond met ${foundCount(active)} van ${activeHunt.challenges.length} gevonden, en bewaard als je laatste tocht.`,
+        confirm: "Nieuwe tocht beginnen",
+        cancel: "Huidige tocht houden",
       });
       if (!ok) return;
     }
@@ -51,7 +51,7 @@ export function mount(root) {
     try {
       orphans = startHunt(hunt);
     } catch {
-      toast("Couldn't start the hunt — your browser's storage seems full or blocked.");
+      toast("De tocht kon niet starten. De opslag van je browser is vol of geblokkeerd.");
       return;
     }
     deletePhotos(orphans).catch(() => {});

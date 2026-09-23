@@ -1,7 +1,8 @@
 {
-  "name": "Kijk & Klik — photo scavenger hunts",
+  "name": "Kijk & Klik — fotospeurtochten",
   "short_name": "Kijk & Klik",
-  "description": "A photo scavenger hunt for family walks. Photos stay on your phone.",
+  "description": "Een fotospeurtocht voor gezinswandelingen. Je foto's blijven op je telefoon.",
+  "lang": "nl",
   "id": "./",
   "start_url": "./",
   "scope": "./",

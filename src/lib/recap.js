@@ -25,5 +25,5 @@ export function buildRecap(run, hunt) {
 }
 
 export function formatDate(ts) {
-  return new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+  return new Date(ts).toLocaleDateString("nl-NL", { day: "numeric", month: "long" });
 }

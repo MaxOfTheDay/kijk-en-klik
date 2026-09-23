@@ -287,10 +287,23 @@ img {
   letter-spacing: -0.025em;
   margin: 44px 0 18px;
 }
+.home__title em {
+  font-style: italic;
+  font-weight: 600;
+  color: var(--accent);
+}
 .home__lede {
   font-size: 18px;
   color: var(--ink-soft);
   max-width: 32ch;
+}
+.home__trail {
+  display: block;
+  width: min(100%, 320px);
+  height: auto;
+  margin-top: 26px;
+  color: var(--accent);
+  opacity: 0.6;
 }
 .home__foot {
   margin-top: auto;
@@ -449,7 +462,7 @@ img {
 /* Board -------------------------------------------------------------------- */
 
 .board__head {
-  margin: 6px 0 22px;
+  margin: 6px 0 24px;
 }
 .board__count {
   font: 560 40px/1.05 var(--serif);
@@ -462,11 +475,11 @@ img {
   color: var(--accent);
 }
 .board__head.is-updated .board__n {
-  animation: count-pop 0.6s var(--ease-out);
+  animation: count-pop 0.7s var(--ease-out) 0.35s;
 }
 @keyframes count-pop {
-  30% {
-    transform: scale(1.25);
+  35% {
+    transform: scale(1.3) rotate(-4deg);
   }
 }
 .board__lede {
@@ -474,29 +487,67 @@ img {
   margin-top: 8px;
   max-width: 32ch;
 }
-.ticks {
+
+/* Progress as a dotted route: one stop per challenge, a flag at the end. */
+.route {
+  position: relative;
   display: flex;
-  gap: 5px;
-  margin-top: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
 }
-.ticks li {
-  flex: 1;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--line);
-  transition: background-color 0.5s ease 0.2s;
+.route::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 10px;
+  top: 50%;
+  border-top: 2px dotted var(--ink-faint);
+  opacity: 0.7;
 }
-.ticks li.is-found {
+.route li {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--ink-faint);
+  background: var(--paper);
+  transition:
+    background-color 0.4s ease 0.3s,
+    border-color 0.4s ease 0.3s;
+}
+.route li.is-found {
+  border-color: var(--accent);
   background: var(--accent);
+}
+.route li.is-new {
+  animation: stop-in 0.6s var(--ease-out) 0.3s both;
+}
+@keyframes stop-in {
+  from {
+    transform: scale(0.2);
+  }
+  60% {
+    transform: scale(1.4);
+  }
+}
+.route .route__end {
+  width: auto;
+  height: auto;
+  border: 0;
+  padding-left: 4px;
+  color: var(--accent);
 }
 
 .next {
   margin-bottom: 30px;
 }
 .next .eyebrow {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
+/* The suggestion: a slightly tilted note with a taped corner and a trail. */
 .next__card {
+  position: relative;
   display: grid;
   grid-template-columns: 60px 1fr;
   grid-template-areas: "icon title" "icon cta";
@@ -504,15 +555,28 @@ img {
   row-gap: 10px;
   align-items: center;
   width: 100%;
-  padding: 20px;
+  padding: 22px 20px 38px;
   text-align: left;
   background: var(--accent-wash);
   border: 1.5px solid var(--accent-line);
-  border-radius: var(--radius-lg);
-  transition: transform 0.12s ease;
+  border-radius: 18px 20px 17px 21px;
+  transform: rotate(-0.6deg);
+  transition: transform 0.15s ease;
+}
+.next__card::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  right: 34px;
+  width: 64px;
+  height: 20px;
+  background: rgb(255 253 246 / 0.75);
+  border: 1px solid rgb(0 0 0 / 0.04);
+  transform: rotate(4deg);
+  box-shadow: 0 1px 2px rgb(60 40 10 / 0.12);
 }
 .next__card:active {
-  transform: scale(0.985);
+  transform: rotate(-0.6deg) scale(0.985);
 }
 .next__icon {
   grid-area: icon;
@@ -524,6 +588,7 @@ img {
   border-radius: 50%;
   background: var(--card);
   color: var(--accent);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .next__title {
   grid-area: title;
@@ -538,21 +603,40 @@ img {
   font-weight: 650;
   color: var(--accent-ink);
 }
+.next__trail {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 8px;
+  width: calc(100% - 36px);
+  height: 22px;
+  color: var(--accent);
+  opacity: 0.45;
+}
 .next--done {
   padding: 22px 20px 20px;
   background: var(--accent-wash);
   border: 1.5px solid var(--accent-line);
-  border-radius: var(--radius-lg);
+  border-radius: 18px 20px 17px 21px;
 }
 .next__done-title {
   font: 560 28px/1.1 var(--serif);
   margin: 6px 0 16px;
 }
 
+.board__grid .section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.board__grid .section-label .icon {
+  color: var(--accent);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px 12px;
 }
 .card {
   position: relative;
@@ -564,51 +648,78 @@ img {
   text-align: left;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  /* Slightly uneven corners, like cut paper. */
+  border-radius: 14px 16px 13px 15px;
   transition: transform 0.12s ease;
 }
 .card:active {
   transform: scale(0.97);
 }
-/* An empty photo slot, waiting to be filled. */
+/* An empty photo slot: viewfinder corners, waiting for a discovery. */
 .card:not(.is-found)::after {
   content: "";
   position: absolute;
-  inset: 7px;
-  border: 1.5px dashed var(--line);
-  border-radius: 9px;
+  inset: 8px;
   pointer-events: none;
+  --c: var(--line);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 16px 2px,
+    linear-gradient(var(--c), var(--c)) top left / 2px 16px,
+    linear-gradient(var(--c), var(--c)) top right / 16px 2px,
+    linear-gradient(var(--c), var(--c)) top right / 2px 16px,
+    linear-gradient(var(--c), var(--c)) bottom left / 16px 2px,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px 16px,
+    linear-gradient(var(--c), var(--c)) bottom right / 16px 2px,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px 16px;
+  background-repeat: no-repeat;
 }
+/* Expedition marker: the challenge number in a dashed ring. */
 .card__num {
-  font: italic 500 15px/1 var(--serif);
-  color: var(--ink-faint);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 6px 0 0 6px;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 50%;
+  font: italic 560 14px/1 var(--serif);
+  color: var(--accent-ink);
 }
 .card__icon {
   color: var(--accent);
-  margin-top: 12px;
+  margin: 14px 0 0 4px;
 }
 .card__title {
   margin-top: auto;
+  padding: 0 2px 2px;
   font: 500 17px/1.2 var(--serif);
   letter-spacing: -0.005em;
   overflow-wrap: anywhere;
 }
 .card__tag {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 20px;
+  right: 16px;
   font: 700 11px/1 var(--sans);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-ink);
 }
 
+/* A found card: the photo takes over, pinned slightly askew, with a stamp. */
 .card.is-found {
   overflow: hidden;
   padding: 0;
-  border-color: transparent;
+  border: 4px solid var(--print);
+  border-radius: 6px;
   background: var(--paper-deep);
-  box-shadow: var(--lift);
+  box-shadow:
+    0 1px 1px rgb(40 30 10 / 0.08),
+    0 12px 24px -14px rgb(60 40 10 / 0.55);
+  transform: rotate(var(--tilt, 0deg));
+}
+.card.is-found:active {
+  transform: rotate(var(--tilt, 0deg)) scale(0.97);
 }
 .card__photo {
   position: absolute;
@@ -624,38 +735,39 @@ img {
 }
 .card.is-found .card__label {
   position: absolute;
-  left: 7px;
-  right: 7px;
-  bottom: 7px;
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  padding: 7px 9px 8px 7px;
-  border-radius: 10px;
-  background: rgb(251 248 241 / 0.93);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 7px 9px 8px;
+  background: rgb(255 253 248 / 0.94);
 }
 .card.is-found .card__title {
   margin: 0;
+  padding: 0;
   font: 600 13px/1.25 var(--sans);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.card__check {
+.card__stamp {
+  position: absolute;
+  top: 8px;
+  right: 8px;
   display: grid;
   place-items: center;
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin-top: -1px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
+  box-shadow:
+    0 0 0 2px var(--print),
+    0 0 0 3.5px var(--accent),
+    0 3px 8px rgb(0 0 0 / 0.25);
+  transform: rotate(-12deg);
 }
-.card__check .icon {
+.card__stamp .icon {
   stroke-width: 2.4;
 }
 .card.is-missing {
@@ -664,17 +776,17 @@ img {
 
 /* The moment a photo lands on its card. */
 .card.is-new {
-  animation: card-land 0.55s var(--ease-out);
+  animation: card-land 0.6s var(--ease-out);
 }
 .card.is-new .card__photo {
   animation: photo-settle 0.9s var(--ease-out) both;
 }
-.card.is-new .card__check {
-  animation: check-in 0.45s var(--ease-out) 0.45s both;
+.card.is-new .card__stamp {
+  animation: stamp-down 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) 0.55s both;
 }
 @keyframes card-land {
   from {
-    transform: scale(0.94);
+    transform: rotate(0deg) scale(0.92);
   }
 }
 @keyframes photo-settle {
@@ -684,17 +796,17 @@ img {
     filter: brightness(1.5) saturate(0.6);
   }
 }
-@keyframes check-in {
+@keyframes stamp-down {
   from {
-    transform: scale(0.3);
     opacity: 0;
+    transform: rotate(-35deg) scale(2.2);
   }
 }
 
 .board__foot {
   display: flex;
   justify-content: center;
-  margin-top: 26px;
+  margin-top: 28px;
 }
 .board__foot .btn--quiet {
   width: auto;
@@ -750,13 +862,27 @@ dialog::backdrop {
   margin-right: -12px;
 }
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font: 700 12px/1 var(--sans);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-ink);
   background: var(--accent-wash);
   border-radius: 999px;
-  padding: 7px 12px;
+  padding: 4px 12px 4px 4px;
+}
+.chip__num {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 60%, transparent);
+  background: var(--card);
+  font: italic 560 12px/1 var(--serif);
+  letter-spacing: 0;
 }
 .sheet__icon {
   display: grid;
@@ -769,6 +895,7 @@ dialog::backdrop {
   color: var(--accent);
 }
 .sheet__photo {
+  position: relative;
   margin: 14px 0 18px;
   aspect-ratio: 4 / 3;
   border-radius: var(--radius);
@@ -779,6 +906,22 @@ dialog::backdrop {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.sheet__stamp {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  box-shadow:
+    0 0 0 2px var(--print),
+    0 0 0 3.5px var(--accent);
+  transform: rotate(-12deg);
 }
 .sheet__title {
   font: 560 32px/1.1 var(--serif);
@@ -861,6 +1004,14 @@ dialog::backdrop {
   margin: 0 auto;
   padding: 12px 20px calc(env(safe-area-inset-bottom) + 20px);
 }
+.preview__eyebrow {
+  font: 700 12px/1 var(--sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgb(255 255 255 / 0.55);
+  margin-bottom: 6px;
+}
 .preview__label {
   font: 500 19px/1.25 var(--serif);
   text-align: center;
@@ -884,6 +1035,210 @@ dialog::backdrop {
 }
 .preview.is-busy .btn {
   opacity: 0.6;
+  pointer-events: none;
+}
+
+/* In-app camera ------------------------------------------------------------ */
+
+.camera {
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #14120f;
+  color: #fff;
+}
+.camera[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  animation: fade-in 0.2s ease;
+}
+.camera::backdrop {
+  background: #14120f;
+}
+.camera__top {
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 8px) 10px 10px;
+}
+.camera__prompt {
+  font: 500 18px/1.25 var(--serif);
+  text-align: center;
+  color: rgb(255 255 255 / 0.92);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.icon-btn--dark {
+  color: #fff;
+}
+.icon-btn--dark:active {
+  background: rgb(255 255 255 / 0.12);
+}
+.camera__stage {
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+  container-type: size;
+}
+.camera__viewfinder {
+  position: relative;
+  width: min(100cqw, 75cqh, 560px);
+  aspect-ratio: 3 / 4;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+}
+.camera__viewfinder video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.camera__viewfinder video.is-mirrored {
+  transform: scaleX(-1);
+}
+.camera__corners {
+  position: absolute;
+  inset: 16px;
+  pointer-events: none;
+  --c: rgb(255 255 255 / 0.85);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 26px 3px,
+    linear-gradient(var(--c), var(--c)) top left / 3px 26px,
+    linear-gradient(var(--c), var(--c)) top right / 26px 3px,
+    linear-gradient(var(--c), var(--c)) top right / 3px 26px,
+    linear-gradient(var(--c), var(--c)) bottom left / 26px 3px,
+    linear-gradient(var(--c), var(--c)) bottom left / 3px 26px,
+    linear-gradient(var(--c), var(--c)) bottom right / 26px 3px,
+    linear-gradient(var(--c), var(--c)) bottom right / 3px 26px;
+  background-repeat: no-repeat;
+}
+.camera__flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.camera__flash.is-on {
+  animation: flash 0.4s ease-out;
+}
+@keyframes flash {
+  from {
+    opacity: 0.85;
+  }
+}
+.camera__status {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.5);
+  font-size: 15px;
+  white-space: nowrap;
+  color: rgb(255 255 255 / 0.9);
+}
+.camera__status[hidden] {
+  display: none;
+}
+.camera__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px;
+  text-align: center;
+  background-color: #221f1a;
+  background-image: radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.07) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+.camera__fallback[hidden] {
+  display: none;
+}
+.camera__fallback-icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1.5px dashed rgb(255 255 255 / 0.4);
+  color: var(--paper);
+}
+.camera__fallback-text {
+  max-width: 28ch;
+  font: 400 18px/1.4 var(--serif);
+  color: rgb(255 255 255 / 0.88);
+}
+.camera__fallback .btn {
+  width: auto;
+}
+.camera__controls {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 18px 28px calc(env(safe-area-inset-bottom) + 24px);
+}
+.camera__controls.is-hidden {
+  visibility: hidden;
+}
+.cam-btn {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+  justify-self: start;
+}
+.cam-btn[data-cam="switch"] {
+  justify-self: end;
+}
+.cam-btn[hidden] {
+  display: none;
+}
+.cam-btn:active {
+  background: rgb(255 255 255 / 0.24);
+}
+.shutter {
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  transition: opacity 0.2s ease;
+}
+.shutter span {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent);
+  transition: transform 0.12s ease;
+}
+.shutter:active span {
+  transform: scale(0.86);
+}
+.shutter:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.camera.is-busy .camera__controls {
+  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -958,18 +1313,57 @@ dialog::backdrop {
   text-align: center;
   margin: 8px 0 30px;
 }
+.stamp-wrap {
+  position: relative;
+  display: inline-block;
+}
+/* A double-ringed ink stamp. */
 .stamp {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border: 1.5px solid var(--accent);
+  gap: 8px;
+  padding: 9px 18px;
+  border: 2px solid var(--accent);
   border-radius: 999px;
-  font: 700 12px/1 var(--sans);
-  letter-spacing: 0.1em;
+  box-shadow:
+    inset 0 0 0 2px var(--paper),
+    inset 0 0 0 3.5px color-mix(in srgb, var(--accent) 60%, transparent);
+  font: 800 13px/1 var(--sans);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent-ink);
-  transform: rotate(-2deg);
+  transform: rotate(-3deg);
+}
+.burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+.burst span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  animation: burst 1.1s var(--ease-out) calc(0.45s + var(--d)) both;
+}
+.burst .icon {
+  fill: currentColor;
+}
+@keyframes burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x) * 1.6), calc(-50% + var(--y) * 1.6)) scale(1) rotate(40deg);
+  }
 }
 .recap__title {
   margin-top: 16px;
@@ -982,6 +1376,19 @@ dialog::backdrop {
   color: var(--ink-soft);
   font-size: 17px;
 }
+.recap__cheer {
+  margin-top: 6px;
+  font: italic 500 21px/1.3 var(--serif);
+  color: var(--accent-ink);
+}
+.recap__trail {
+  display: block;
+  width: min(70%, 260px);
+  height: auto;
+  margin: 20px auto 0;
+  color: var(--accent);
+  opacity: 0.5;
+}
 
 .collage {
   display: grid;
@@ -989,6 +1396,7 @@ dialog::backdrop {
   gap: 22px 14px;
 }
 .print {
+  position: relative;
   padding: 8px 8px 12px;
   background: var(--print);
   border-radius: 3px;
@@ -996,6 +1404,21 @@ dialog::backdrop {
     0 1px 1px rgb(40 30 10 / 0.08),
     0 14px 28px -16px rgb(60 40 10 / 0.5);
   transform: rotate(var(--tilt));
+}
+/* A strip of tape holding each print to the page. */
+.print::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -9px;
+  left: 50%;
+  width: 56px;
+  height: 18px;
+  margin-left: -28px;
+  background: rgb(255 253 246 / 0.72);
+  border: 1px solid rgb(0 0 0 / 0.04);
+  box-shadow: 0 1px 2px rgb(60 40 10 / 0.12);
+  transform: rotate(calc(var(--tilt) * -3));
 }
 .print--wide {
   grid-column: span 2;
@@ -1029,10 +1452,11 @@ dialog::backdrop {
 }
 
 .is-arriving .stamp {
-  animation: stamp-in 0.5s var(--ease-out) 0.15s both;
+  animation: stamp-in 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) 0.15s both;
 }
 .is-arriving .recap__title,
-.is-arriving .recap__meta {
+.is-arriving .recap__meta,
+.is-arriving .recap__cheer {
   animation: screen-in 0.5s var(--ease-out) both;
 }
 .is-arriving .print {
@@ -1042,7 +1466,7 @@ dialog::backdrop {
 @keyframes stamp-in {
   from {
     opacity: 0;
-    transform: rotate(-12deg) scale(1.7);
+    transform: rotate(-16deg) scale(2);
   }
 }
 @keyframes print-settle {

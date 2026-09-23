@@ -1,41 +1,47 @@
-// The hunt board, plus the two layers that open over it:
-//   challenge sheet  (#/hunt/<id>)        read the prompt, take a photo
-//   photo preview    (#/hunt/<id>/photo)  use it or retake it
+// The hunt board, plus the layers that open over it:
+//   challenge sheet  (#/hunt/<id>)         read the prompt, start the camera
+//   in-app camera    (#/hunt/<id>/camera)  live viewfinder (screens/camera.js)
+//   photo preview    (#/hunt/<id>/photo)   use it or take it again
 
 import { getHunt, getChallenge } from "../content/hunts.js";
-import { icon } from "../content/icons.js";
+import { icon, trail } from "../content/icons.js";
 import { getActive, foundCount, recordFind, finishActive } from "../lib/state.js";
 import { savePhoto, deletePhotos, newPhotoId, saveDraft, getDraft, clearDraft } from "../lib/photos.js";
 import { processImage, UnreadableImageError } from "../lib/image.js";
-import { pickPhoto, canTakePhoto } from "../lib/capture.js";
+import { pickPhoto } from "../lib/capture.js";
+import { liveCameraSupported, liveCameraBlocked, checkCameraPermission } from "../lib/camera.js";
 import { go, returnTo } from "../lib/nav.js";
 import { esc, haptic, confirmDialog, reducedMotion } from "../lib/ui.js";
 import { hydratePhotos } from "./shared.js";
+import { createCamera } from "./camera.js";
 
 const CATEGORY_LABEL = {
-  observation: "Look closely",
-  nature: "Nature",
-  imagination: "Imagine",
-  creative: "Your choice",
-  group: "Together",
+  observation: "Goed kijken",
+  nature: "Natuur",
+  imagination: "Fantasie",
+  creative: "Jij kiest",
+  group: "Samen",
 };
+
+// Found photos sit on the board like pinned prints: a gentle, fixed tilt.
+const TILTS = [-1.4, 1, -0.6, 1.3, -1, 0.7, -1.2, 0.5, -0.8, 1.1, -0.4, 0.9];
 
 export function mount(root, route, app) {
   const run = getActive();
   const hunt = getHunt(run.huntId);
-  let draft = null; // { challengeId, source, full, thumb, width, height, url }
+  let draft = null; // { challengeId, source: "live" | "picker", full, thumb, width, height, url }
   let busy = false;
 
   root.innerHTML = `
     <main class="screen board" style="--accent:${hunt.accent}">
       <header class="topbar">
-        <button class="icon-btn" data-action="home" aria-label="Back to home">${icon("back")}</button>
+        <button class="icon-btn" data-action="home" aria-label="Terug naar start">${icon("back")}</button>
         <span class="topbar__mark" aria-hidden="true">${icon(hunt.theme)}</span>
       </header>
       <section class="board__head" data-part="head"></section>
       <section class="next" data-part="next"></section>
       <section class="board__grid" aria-labelledby="grid-title">
-        <h2 id="grid-title" class="section-label">The board</h2>
+        <h2 id="grid-title" class="section-label">${icon("flag", { size: 15 })} Jullie bord</h2>
         <ul class="grid">
           ${hunt.challenges.map((c, i) => `<li data-card="${esc(c.id)}">${card(c, i)}</li>`).join("")}
         </ul>
@@ -43,11 +49,24 @@ export function mount(root, route, app) {
       <footer class="board__foot" data-part="foot"></footer>
     </main>
     <dialog class="sheet" style="--accent:${hunt.accent}" aria-labelledby="sheet-title"></dialog>
-    <dialog class="preview" aria-labelledby="preview-title"></dialog>`;
+    <dialog class="camera" style="--accent:${hunt.accent}" aria-labelledby="camera-title"></dialog>
+    <dialog class="preview" style="--accent:${hunt.accent}" aria-labelledby="preview-title"></dialog>`;
 
   const sheet = root.querySelector(".sheet");
   const preview = root.querySelector(".preview");
+  const cameraDialog = root.querySelector(".camera");
   const part = (name) => root.querySelector(`[data-part=${name}]`);
+  const current = () => sheet.dataset.challenge;
+
+  const camera = createCamera(cameraDialog, {
+    onCapture: (blob) => develop(blob, "live", current()),
+    onPick: () => pickAndDevelop(current(), { fromCamera: true }),
+    onClose() {
+      if (cameraDialog.dataset.quiet) return delete cameraDialog.dataset.quiet;
+      returnTo(`hunt/${current()}`);
+    },
+  });
+  checkCameraPermission();
 
   // Rendering -----------------------------------------------------------------
 
@@ -60,36 +79,34 @@ export function mount(root, route, app) {
     const num = String(i + 1).padStart(2, "0");
     if (find) {
       return `
-        <button class="card is-found" data-open="${esc(c.id)}" data-photo-frame>
+        <button class="card is-found" data-open="${esc(c.id)}" data-photo-frame style="--tilt:${TILTS[i % TILTS.length]}deg">
           <img class="card__photo" alt="" data-photo-id="${esc(find.photoId)}">
-          <span class="card__label">
-            <span class="card__check">${icon("check", { size: 14 })}</span>
-            <span class="card__title">${esc(c.title)}</span>
-          </span>
-          <span class="visually-hidden">— found</span>
+          <span class="card__stamp" aria-hidden="true">${icon("check", { size: 18 })}</span>
+          <span class="card__label"><span class="card__title">${esc(c.title)}</span></span>
+          <span class="visually-hidden">— gevonden</span>
         </button>`;
     }
     return `
       <button class="card" data-open="${esc(c.id)}">
-        <span class="card__num">${num}</span>
+        <span class="card__num" aria-hidden="true">${num}</span>
         <span class="card__icon">${icon(c.icon, { size: 28 })}</span>
         <span class="card__title">${esc(c.title)}</span>
-        ${c.type === "together" ? `<span class="card__tag">Together</span>` : ""}
-        <span class="visually-hidden">— not found yet</span>
+        ${c.type === "together" ? `<span class="card__tag">Samen</span>` : ""}
+        <span class="visually-hidden">— nog niet gevonden</span>
       </button>`;
   }
 
   function renderHead() {
     const n = foundCount(getActive());
     const total = hunt.challenges.length;
-    const ticks = hunt.challenges.map((c) => `<li class="${finds()[c.id] ? "is-found" : ""}"></li>`).join("");
+    const stops = hunt.challenges.map((c) => `<li class="${finds()[c.id] ? "is-found" : ""}"></li>`).join("");
     part("head").innerHTML = `
       <p class="eyebrow">${esc(hunt.title)}</p>
       <h1 class="board__count" aria-live="polite">
-        ${n === 0 ? `${total} things to find` : `<span class="board__n">${n}</span> of ${total} found`}
+        ${n === 0 ? `${total} dingen om te vinden` : `<span class="board__n">${n}</span> van ${total} gevonden`}
       </h1>
-      ${n === 0 ? `<p class="board__lede">Start anywhere. The board fills up with your photos as you go.</p>` : ""}
-      <ol class="ticks" aria-hidden="true">${ticks}</ol>`;
+      ${n === 0 ? `<p class="board__lede">Begin waar je wilt. Het bord vult zich met jullie foto's.</p>` : ""}
+      <ol class="route" aria-hidden="true">${stops}<li class="route__end">${icon("flag", { size: 16 })}</li></ol>`;
   }
 
   function renderNext() {
@@ -98,18 +115,19 @@ export function mount(root, route, app) {
     if (!next) {
       el.className = "next next--done";
       el.innerHTML = `
-        <p class="eyebrow">${icon("check", { size: 16 })} Every discovery found</p>
-        <h2 class="next__done-title">The board is full.</h2>
-        <button class="btn btn--primary btn--big" data-action="finish">See your board ${icon("arrow")}</button>`;
+        <p class="eyebrow">${icon("star", { size: 16 })} Alles gevonden</p>
+        <h2 class="next__done-title">Het bord is vol!</h2>
+        <button class="btn btn--primary btn--big" data-action="finish">Bekijk jullie vondsten ${icon("arrow")}</button>`;
       return;
     }
     el.className = "next";
     el.innerHTML = `
-      <p class="eyebrow">Try this next</p>
+      <p class="eyebrow">${icon("compass", { size: 16 })} Probeer deze eens</p>
       <button class="next__card" data-open="${esc(next.id)}">
         <span class="next__icon">${icon(next.icon, { size: 32 })}</span>
         <span class="next__title">${esc(next.title)}</span>
-        <span class="next__cta">Take a look ${icon("arrow", { size: 18 })}</span>
+        <span class="next__cta">Op zoek ${icon("arrow", { size: 18 })}</span>
+        ${trail({ className: "next__trail", end: "cross" })}
       </button>`;
   }
 
@@ -123,7 +141,7 @@ export function mount(root, route, app) {
     }
     // Quiet at first; more present once half the board is filled.
     const style = n >= Math.ceil(total / 2) ? "btn--secondary" : "btn--quiet";
-    el.innerHTML = `<button class="btn ${style}" data-action="finish">Finish hunt</button>`;
+    el.innerHTML = `<button class="btn ${style}" data-action="finish">Speurtocht afronden</button>`;
   }
 
   function refreshCard(id) {
@@ -140,40 +158,39 @@ export function mount(root, route, app) {
 
   // Challenge sheet ---------------------------------------------------------
 
+  // The live camera when the browser offers one; otherwise the native
+  // "take or choose" picker, presented as a normal choice, not an error.
+  const useLiveCamera = () => liveCameraSupported() && !liveCameraBlocked();
+
   function renderSheet(c, note = "") {
     const find = finds()[c.id];
-    const camera = canTakePhoto();
-    const tag = c.type === "together" ? "Together" : CATEGORY_LABEL[c.category] ?? "";
-    const num = hunt.challenges.indexOf(c) + 1;
-    const noteText = note || (!camera ? "Camera isn't available here. Choose a photo instead." : "");
+    const live = useLiveCamera();
+    const tag = c.type === "together" ? "Samen" : CATEGORY_LABEL[c.category] ?? "";
+    const num = String(hunt.challenges.indexOf(c) + 1).padStart(2, "0");
     sheet.dataset.challenge = c.id;
+    sheet.dataset.live = String(live);
+    const takeLabel = find ? "Nieuwe foto maken" : "Foto maken";
+    const primary = live
+      ? `<button class="btn ${find ? "btn--secondary" : "btn--primary btn--big"}" data-action="camera">${icon("camera")} ${takeLabel}</button>
+         <button class="btn btn--quiet" data-action="library">${icon("image")} Kies uit je foto's</button>`
+      : `<button class="btn ${find ? "btn--secondary" : "btn--primary btn--big"}" data-action="library">${icon("camera")} Foto maken of kiezen</button>`;
     sheet.innerHTML = `
       <div class="sheet__inner">
         <div class="sheet__top">
-          <span class="chip">No. ${num}${tag ? ` · ${esc(tag)}` : ""}</span>
-          <button class="icon-btn" data-action="close" aria-label="Close">${icon("close")}</button>
+          <span class="chip"><span class="chip__num">${num}</span>${tag ? esc(tag) : ""}</span>
+          <button class="icon-btn" data-action="close" aria-label="Sluiten">${icon("close")}</button>
         </div>
         ${
           find
-            ? `<div class="sheet__photo" data-photo-frame><img alt="Your photo for: ${esc(c.title)}" data-photo-id="${esc(find.photoId)}" data-photo-size="full"></div>`
+            ? `<div class="sheet__photo" data-photo-frame><img alt="Jullie foto bij: ${esc(c.title)}" data-photo-id="${esc(find.photoId)}" data-photo-size="full"><span class="sheet__stamp" aria-hidden="true">${icon("check", { size: 20 })}</span></div>`
             : `<span class="sheet__icon">${icon(c.icon, { size: 36 })}</span>`
         }
         <h2 id="sheet-title" class="sheet__title">${esc(c.title)}</h2>
         ${c.hint ? `<p class="sheet__hint">${esc(c.hint)}</p>` : ""}
-        <p class="sheet__note" role="status">${esc(noteText)}</p>
+        <p class="sheet__note" role="status">${esc(note)}</p>
         <div class="sheet__actions">
-          ${
-            find
-              ? `
-            <button class="btn btn--primary" data-action="close">Keep this photo</button>
-            ${camera ? `<button class="btn btn--secondary" data-action="camera">${icon("camera")} Take a new photo</button>` : ""}
-            <button class="btn ${camera ? "btn--quiet" : "btn--secondary"}" data-action="library">${icon("image")} Choose from photos</button>`
-              : camera
-                ? `
-            <button class="btn btn--primary btn--big" data-action="camera">${icon("camera")} Take photo</button>
-            <button class="btn btn--quiet" data-action="library">${icon("image")} Choose from photos</button>`
-                : `<button class="btn btn--primary btn--big" data-action="library">${icon("image")} Choose a photo</button>`
-          }
+          ${find ? `<button class="btn btn--primary" data-action="close">Deze houden</button>` : ""}
+          ${primary}
         </div>
       </div>`;
     hydratePhotos(sheet);
@@ -191,36 +208,38 @@ export function mount(root, route, app) {
     if (label !== undefined) setSheetNote(label);
   }
 
-  async function capture(challengeId, source, { fromPreview = false } = {}) {
+  // Turns a captured frame or picked file into a draft and shows the preview.
+  async function develop(file, source, challengeId, { fromPreview = false } = {}) {
+    const processed = await processImage(file);
+    if (draft?.url) URL.revokeObjectURL(draft.url);
+    draft = { huntId: hunt.id, challengeId, source, ...processed, url: URL.createObjectURL(processed.full) };
+    // Keep a copy so a refresh on the preview doesn't lose the photo.
+    saveDraft({ huntId: hunt.id, challengeId, source, ...processed }).catch(() => {});
+    if (fromPreview) renderPreview(getChallenge(hunt, challengeId));
+    else go(`hunt/${challengeId}/photo`);
+  }
+
+  async function pickAndDevelop(challengeId, { fromPreview = false, fromCamera = false } = {}) {
     if (busy) return;
-    const file = await pickPhoto(source);
-    if (!file) {
-      if (!fromPreview && source === "camera") {
-        setSheetNote("No photo yet. If the camera didn't open, your browser may need camera permission — or choose a photo instead.");
-      }
-      return;
-    }
-    const layer = fromPreview ? preview : sheet;
+    const file = await pickPhoto();
+    if (!file) return;
+    const layer = fromPreview ? preview : fromCamera ? cameraDialog : sheet;
     layer.classList.add("is-busy");
-    if (!fromPreview) setBusy(true, "Developing your photo…");
+    if (fromCamera) camera.setStatus("Foto wordt ontwikkeld…");
+    else if (!fromPreview) setBusy(true, "Foto wordt ontwikkeld…");
     try {
-      const processed = await processImage(file);
-      if (draft?.url) URL.revokeObjectURL(draft.url);
-      draft = { huntId: hunt.id, challengeId, source, ...processed, url: URL.createObjectURL(processed.full) };
-      // Keep a copy so a refresh on the preview doesn't lose the photo.
-      saveDraft({ huntId: hunt.id, challengeId, source, ...processed }).catch(() => {});
-      if (fromPreview) renderPreview(getChallenge(hunt, challengeId));
-      else go(`hunt/${challengeId}/photo`);
+      await develop(file, "picker", challengeId, { fromPreview });
     } catch (err) {
       const message =
         err instanceof UnreadableImageError
-          ? "That photo couldn't be opened. Try taking a new one, or pick a different photo."
-          : "Something went wrong reading that photo. Please try again.";
+          ? "Deze foto kon niet worden geopend. Probeer een andere."
+          : "Er ging iets mis met deze foto. Probeer het nog eens.";
       if (fromPreview) setPreviewError(message);
+      else if (fromCamera) camera.setStatus(message);
       else setSheetNote(message);
     } finally {
       layer.classList.remove("is-busy");
-      if (!fromPreview) setBusy(false);
+      if (!fromPreview && !fromCamera) setBusy(false);
     }
   }
 
@@ -229,14 +248,15 @@ export function mount(root, route, app) {
   function renderPreview(c) {
     preview.innerHTML = `
       <div class="preview__frame">
-        <img src="${draft.url}" alt="Preview of your photo for: ${esc(c.title)}">
+        <img src="${draft.url}" alt="Voorbeeld van jullie foto bij: ${esc(c.title)}">
       </div>
       <div class="preview__bar">
+        <p class="preview__eyebrow">Voorbeeld</p>
         <p id="preview-title" class="preview__label">${esc(c.title)}</p>
         <p class="preview__error" role="alert"></p>
         <div class="preview__actions">
-          <button class="btn btn--on-dark" data-action="retake">${icon("retake")} ${draft.source === "camera" ? "Retake" : "Choose again"}</button>
-          <button class="btn btn--primary btn--light" data-action="use">${icon("check")} Use photo</button>
+          <button class="btn btn--on-dark" data-action="retake">${icon("retake")} Opnieuw</button>
+          <button class="btn btn--primary btn--light" data-action="use">${icon("check")} Gebruiken</button>
         </div>
       </div>`;
   }
@@ -245,29 +265,34 @@ export function mount(root, route, app) {
     preview.querySelector(".preview__error").textContent = text;
   }
 
+  function retake() {
+    if (busy || !draft) return;
+    if (draft.source === "live") returnTo(`hunt/${draft.challengeId}/camera`);
+    else pickAndDevelop(draft.challengeId, { fromPreview: true });
+  }
+
   async function usePhoto() {
     if (busy || !draft) return;
     busy = true;
     preview.classList.add("is-busy");
     const { challengeId } = draft;
     const id = newPhotoId();
+    const fail = (message) => {
+      busy = false;
+      preview.classList.remove("is-busy");
+      setPreviewError(message);
+    };
     try {
       await savePhoto({ id, full: draft.full, thumb: draft.thumb, width: draft.width, height: draft.height });
     } catch {
-      busy = false;
-      preview.classList.remove("is-busy");
-      setPreviewError("We couldn't save this photo — your phone may be low on storage. Free up a little space and try again.");
-      return;
+      return fail("Deze foto kon niet worden bewaard. Misschien is je telefoon vol: maak wat ruimte vrij en probeer het opnieuw.");
     }
     let replaced;
     try {
       replaced = recordFind(challengeId, id);
     } catch {
       deletePhotos([id]).catch(() => {});
-      busy = false;
-      preview.classList.remove("is-busy");
-      setPreviewError("We couldn't save your progress. Please try again.");
-      return;
+      return fail("Je voortgang kon niet worden bewaard. Probeer het opnieuw.");
     }
     if (replaced) deletePhotos([replaced]).catch(() => {});
     discardDraft();
@@ -300,12 +325,18 @@ export function mount(root, route, app) {
   });
   preview.addEventListener("close", () => {
     if (preview.dataset.quiet) return delete preview.dataset.quiet;
-    const id = draft?.challengeId;
-    returnTo(id ? `hunt/${id}` : "hunt");
+    const id = draft?.challengeId ?? current();
+    returnTo(draft?.source === "live" ? `hunt/${id}/camera` : `hunt/${id}`);
   });
   sheet.addEventListener("click", (e) => {
     if (e.target === sheet && !busy) sheet.close();
   });
+
+  function ensureSheet(c) {
+    // Re-render when the camera turned out to be unavailable in the meantime.
+    if (!sheet.open || current() !== c.id || sheet.dataset.live !== String(useLiveCamera())) renderSheet(c);
+    if (!sheet.open) sheet.showModal();
+  }
 
   async function applyRoute(r) {
     const c = r.challengeId ? getChallenge(hunt, r.challengeId) : null;
@@ -320,19 +351,28 @@ export function mount(root, route, app) {
           return go(`hunt/${c.id}`, { replace: true });
         }
       }
-      if (!sheet.open) {
-        renderSheet(c);
-        sheet.showModal();
-      }
+      ensureSheet(c);
+      closeQuietly(cameraDialog); // stops the stream
       renderPreview(c);
       if (!preview.open) preview.showModal();
       return;
     }
 
     closeQuietly(preview);
+
+    if (r.camera) {
+      ensureSheet(c);
+      if (!liveCameraSupported()) return go(`hunt/${c.id}`, { replace: true });
+      if (!cameraDialog.open) {
+        if (liveCameraBlocked()) camera.openFallback(c);
+        else camera.open(c);
+      }
+      return;
+    }
+
+    closeQuietly(cameraDialog);
     if (c) {
-      if (!sheet.open || sheet.dataset.challenge !== c.id) renderSheet(c);
-      if (!sheet.open) sheet.showModal();
+      ensureSheet(c);
       return;
     }
 
@@ -351,11 +391,14 @@ export function mount(root, route, app) {
     renderFoot();
     const btn = li.querySelector(".card");
     btn.classList.add("is-new");
-    root.querySelector(".board__head").classList.add("is-updated");
+    const head = root.querySelector(".board__head");
+    head.classList.add("is-updated");
+    const index = hunt.challenges.findIndex((c) => c.id === id);
+    head.querySelectorAll(".route li")[index]?.classList.add("is-new");
     hydratePhotos(li);
     btn.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
     btn.focus({ preventScroll: true });
-    setTimeout(() => root.querySelector(".board__head")?.classList.remove("is-updated"), 900);
+    setTimeout(() => head.classList.remove("is-updated"), 1200);
   }
 
   // Actions -----------------------------------------------------------------
@@ -365,10 +408,10 @@ export function mount(root, route, app) {
     const total = hunt.challenges.length;
     if (n < total) {
       const ok = await confirmDialog({
-        title: n === 0 ? "Finish without any discoveries?" : `Finish with ${n} of ${total} discoveries?`,
-        body: n === 0 ? "That's fine — there's always another walk." : "",
-        confirm: "Finish hunt",
-        cancel: "Keep looking",
+        title: n === 0 ? "Afronden zonder vondsten?" : `Afronden met ${n} van ${total} vondsten?`,
+        body: n === 0 ? "Geeft niks. Er komt vast nog een wandeling." : "",
+        confirm: "Afronden",
+        cancel: "Verder zoeken",
       });
       if (!ok) return;
     }
@@ -385,10 +428,11 @@ export function mount(root, route, app) {
   }
 
   function onClick(e) {
+    // The camera handles its own buttons.
+    if (cameraDialog.contains(e.target)) return;
     const opener = e.target.closest("[data-open]");
     if (opener && !sheet.open) return go(`hunt/${opener.dataset.open}`);
     const action = e.target.closest("[data-action]")?.dataset.action;
-    const current = sheet.dataset.challenge;
     switch (action) {
       case "home":
         return returnTo("");
@@ -398,10 +442,12 @@ export function mount(root, route, app) {
         if (!busy) sheet.close();
         return;
       case "camera":
+        if (!busy) go(`hunt/${current()}/camera`);
+        return;
       case "library":
-        return capture(current, action);
+        return pickAndDevelop(current());
       case "retake":
-        return capture(draft.challengeId, draft.source, { fromPreview: true });
+        return retake();
       case "use":
         return usePhoto();
     }
@@ -414,6 +460,7 @@ export function mount(root, route, app) {
     update: applyRoute,
     destroy() {
       root.removeEventListener("click", onClick);
+      camera.destroy();
       if (draft?.url) URL.revokeObjectURL(draft.url);
     },
   };

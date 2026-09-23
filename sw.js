@@ -4,7 +4,7 @@
 //
 // Bump VERSION when files are added or removed below.
 
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `kijk-en-klik-${VERSION}`;
 
 const APP_SHELL = [
@@ -15,6 +15,7 @@ const APP_SHELL = [
   "src/app.js",
   "src/content/hunts.js",
   "src/content/icons.js",
+  "src/lib/camera.js",
   "src/lib/capture.js",
   "src/lib/image.js",
   "src/lib/nav.js",
@@ -23,6 +24,7 @@ const APP_SHELL = [
   "src/lib/state.js",
   "src/lib/ui.js",
   "src/screens/board.js",
+  "src/screens/camera.js",
   "src/screens/home.js",
   "src/screens/hunts.js",
   "src/screens/recap.js",

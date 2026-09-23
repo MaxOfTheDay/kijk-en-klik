@@ -1,6 +1,6 @@
 import { getLast } from "../lib/state.js";
 import { getHunt } from "../content/hunts.js";
-import { icon } from "../content/icons.js";
+import { icon, trail } from "../content/icons.js";
 import { buildRecap } from "../lib/recap.js";
 import { go, returnTo } from "../lib/nav.js";
 import { esc, privacyNote, reducedMotion } from "../lib/ui.js";
@@ -18,31 +18,36 @@ export function mount(root, route, app) {
   root.innerHTML = `
     <main class="screen recap ${celebrate ? "is-arriving" : ""}" style="--accent:${recap.accent}">
       <header class="topbar">
-        <button class="icon-btn" data-action="home" aria-label="Close and go home">${icon("close")}</button>
+        <button class="icon-btn" data-action="home" aria-label="Sluiten en naar start">${icon("close")}</button>
       </header>
 
       <section class="recap__head">
-        <p class="stamp">${icon("check", { size: 16 })} Hunt complete</p>
+        <div class="stamp-wrap">
+          <p class="stamp">${icon("compass", { size: 18 })} Speurtocht voltooid</p>
+          ${celebrate ? burst() : ""}
+        </div>
         <h1 class="recap__title">${esc(recap.title)}</h1>
-        <p class="recap__meta">${recap.found} of ${recap.total} discoveries · ${esc(recap.dateLabel)}</p>
+        <p class="recap__meta">${recap.found} van ${recap.total} gevonden · ${esc(recap.dateLabel)}</p>
+        ${recap.found ? `<p class="recap__cheer">${recap.found === recap.total ? "Alles gevonden. Wat een tocht!" : "Mooie vondsten!"}</p>` : ""}
+        ${trail({ className: "recap__trail" })}
       </section>
 
       ${recap.items.length ? collage(recap.items) : `
         <section class="recap__empty">
-          <p class="recap__empty-title">No photos this time.</p>
-          <p>The walk still counts.</p>
+          <p class="recap__empty-title">Deze keer geen foto's.</p>
+          <p>De wandeling telt nog steeds.</p>
         </section>`}
 
       ${recap.missing.length && recap.items.length ? `
         <section class="recap__rest">
-          <h2 class="section-label">Still out there, for next time</h2>
+          <h2 class="section-label">Nog te vinden, voor een volgende keer</h2>
           <ul>${recap.missing.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>
         </section>` : ""}
 
       <footer class="recap__foot">
-        ${recap.items.length ? `<p class="recap__tip">Press and hold a photo to save it to your phone.</p>` : ""}
-        <button class="btn btn--primary btn--big" data-go="hunts">Start another hunt ${icon("arrow")}</button>
-        <button class="btn btn--quiet" data-action="home">Back home</button>
+        ${recap.items.length ? `<p class="recap__tip">Houd een foto ingedrukt om hem op je telefoon te bewaren.</p>` : ""}
+        <button class="btn btn--primary btn--big" data-go="hunts">Nog een speurtocht ${icon("arrow")}</button>
+        <button class="btn btn--quiet" data-action="home">Terug naar start</button>
         ${privacyNote()}
       </footer>
     </main>`;
@@ -73,5 +78,15 @@ function collage(items) {
         </figure>
       </li>`;
   });
-  return `<ol class="collage" aria-label="Your discoveries">${prints.join("")}</ol>`;
+  return `<ol class="collage" aria-label="Jullie vondsten">${prints.join("")}</ol>`;
+}
+
+// A small, one-off burst of stars around the stamp. Only right after finishing.
+function burst() {
+  const stars = [
+    [-70, -26, 14], [-44, -44, 10], [54, -40, 12], [78, -8, 9], [-80, 14, 9], [66, 24, 13],
+  ];
+  return `<span class="burst" aria-hidden="true">${stars
+    .map(([x, y, s], i) => `<span style="--x:${x}px;--y:${y}px;--d:${i * 40}ms">${icon("star", { size: s })}</span>`)
+    .join("")}</span>`;
 }

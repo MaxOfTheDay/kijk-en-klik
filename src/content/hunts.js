@@ -13,7 +13,7 @@
 //
 // Challenge
 //   id         stable within its hunt — saved photos are linked by it
-//   title      the prompt, short enough to read aloud to a five-year-old
+//   title      the prompt (Dutch), short enough to read aloud to a five-year-old
 //   hint       optional nudge for the grown-up reading it out
 //   type       "find" (spot something) or "together" (a group moment)
 //   category   observation | nature | imagination | creative | group
@@ -23,16 +23,16 @@
 export const HUNTS = [
   {
     id: "nature",
-    title: "Nature Hunt",
-    description: "Slow down and notice the small, wild things.",
+    title: "Natuurspeurtocht",
+    description: "Doe rustig aan en ontdek kleine, wilde dingen.",
     theme: "leaf",
     accent: "#4d6b3c",
     mode: "open",
     challenges: [
       {
         id: "big-leaf",
-        title: "Find a fallen leaf bigger than your hand",
-        hint: "Put a hand next to it in the photo to prove it.",
+        title: "Vind een blad dat groter is dan je hand",
+        hint: "Pak er een van de grond en houd je hand ernaast.",
         type: "find",
         category: "nature",
         icon: "leaf",
@@ -40,8 +40,8 @@ export const HUNTS = [
       },
       {
         id: "tiny-growing",
-        title: "Find something tiny that's growing",
-        hint: "Look low: cracks in the pavement, old walls, tree roots.",
+        title: "Vind iets kleins dat groeit",
+        hint: "Kijk laag: tussen stoeptegels, op oude muren, bij boomwortels.",
         type: "find",
         category: "observation",
         icon: "sprout",
@@ -49,8 +49,8 @@ export const HUNTS = [
       },
       {
         id: "strange-tree",
-        title: "Find the strangest tree",
-        hint: "Twisty, lumpy, leaning, hollow — you decide what's strange.",
+        title: "Vind de vreemdste boom",
+        hint: "Scheef, bultig, hol of gedraaid. Jij bepaalt wat vreemd is.",
         type: "find",
         category: "creative",
         icon: "tree",
@@ -58,8 +58,8 @@ export const HUNTS = [
       },
       {
         id: "three-leaves",
-        title: "Find three different leaves",
-        hint: "Fallen leaves are perfect. Line them up side by side.",
+        title: "Vind drie verschillende bladeren",
+        hint: "Bladeren van de grond zijn perfect. Leg ze naast elkaar.",
         type: "find",
         category: "nature",
         icon: "leaves",
@@ -67,8 +67,8 @@ export const HUNTS = [
       },
       {
         id: "animal-home",
-        title: "Find a place where an animal might live",
-        hint: "A hole, a nest, a thick hedge. Look, but don't disturb.",
+        title: "Vind een plek waar een dier kan wonen",
+        hint: "Een hol, een nest, een dichte struik. Kijken mag, storen niet.",
         type: "find",
         category: "nature",
         icon: "burrow",
@@ -76,8 +76,8 @@ export const HUNTS = [
       },
       {
         id: "bird",
-        title: "Spot a bird — or a feather",
-        hint: "Listen first. Then look up.",
+        title: "Spot een vogel, of een veer",
+        hint: "Eerst luisteren. Dan omhoog kijken.",
         type: "find",
         category: "observation",
         icon: "feather",
@@ -85,8 +85,8 @@ export const HUNTS = [
       },
       {
         id: "tree-pose",
-        title: "Everyone, be a tree",
-        hint: "Arms up like branches. Who's the tallest? Who's the windiest?",
+        title: "Allemaal een boom!",
+        hint: "Armen omhoog als takken. Wie is de hoogste boom?",
         type: "together",
         category: "group",
         icon: "people",
@@ -94,8 +94,8 @@ export const HUNTS = [
       },
       {
         id: "best-view",
-        title: "Find the view you want to remember",
-        hint: "Stop for a moment. Look all the way around first.",
+        title: "Vind het uitzicht dat je wilt onthouden",
+        hint: "Sta even stil. Kijk eerst helemaal om je heen.",
         type: "find",
         category: "observation",
         icon: "horizon",
@@ -105,16 +105,16 @@ export const HUNTS = [
   },
   {
     id: "funny",
-    title: "Funny Finds",
-    description: "Odd, silly things hiding in plain sight.",
+    title: "Gekke vondsten",
+    description: "Rare, grappige dingen die zich overal verstoppen.",
     theme: "face",
     accent: "#a4492a",
     mode: "open",
     challenges: [
       {
         id: "face",
-        title: "Find something that looks like a face",
-        hint: "Two windows and a door. Two knots and a crack. Faces are everywhere.",
+        title: "Vind iets dat op een gezicht lijkt",
+        hint: "Twee ramen en een deur. Twee knoesten en een scheur. Gezichten zijn overal.",
         type: "find",
         category: "creative",
         icon: "face",
@@ -122,8 +122,8 @@ export const HUNTS = [
       },
       {
         id: "wonky",
-        title: "Find the wonkiest thing you can",
-        hint: "Crooked, bent, leaning. The wonkier the better.",
+        title: "Vind het scheefste ding dat je kunt",
+        hint: "Krom, gebogen of schuin. Hoe schever, hoe beter.",
         type: "find",
         category: "observation",
         icon: "wonky",
@@ -131,8 +131,8 @@ export const HUNTS = [
       },
       {
         id: "cloud",
-        title: "Find a cloud shaped like something",
-        hint: "Everyone says what they see. Nobody is wrong.",
+        title: "Vind een wolk die ergens op lijkt",
+        hint: "Wat zien jullie? Niemand heeft het fout.",
         type: "find",
         category: "imagination",
         icon: "cloud",
@@ -140,8 +140,8 @@ export const HUNTS = [
       },
       {
         id: "best-stick",
-        title: "Find the best stick",
-        hint: "Best is up to you. Bendy? Forked? Sword-shaped?",
+        title: "Vind de allerbeste stok",
+        hint: "Jij bepaalt wat de beste is. Krom? Gevorkt? Een zwaard?",
         type: "find",
         category: "creative",
         icon: "stick",
@@ -149,8 +149,8 @@ export const HUNTS = [
       },
       {
         id: "wrong-place",
-        title: "Find something in the wrong place",
-        hint: "A lonely glove on a fence. A leaf on a car. Things that got lost.",
+        title: "Vind iets op een rare plek",
+        hint: "Een verloren want op een hek. Een blad op een auto.",
         type: "find",
         category: "observation",
         icon: "question",
@@ -158,8 +158,8 @@ export const HUNTS = [
       },
       {
         id: "dog-hat",
-        title: "Find something that would make a great hat for a dog",
-        hint: "Just take a photo — no dogs need to wear it.",
+        title: "Vind een mooie hoed voor een hond",
+        hint: "Alleen een foto maken. Er hoeft geen hond iets op.",
         type: "find",
         category: "imagination",
         icon: "hat",
@@ -167,8 +167,8 @@ export const HUNTS = [
       },
       {
         id: "shadows",
-        title: "Take a photo of everyone's funniest shadow",
-        hint: "Stand with the sun behind you. Make yourselves weird.",
+        title: "Maak een foto van jullie grappigste schaduwen",
+        hint: "Zon in je rug. Maak jezelf zo gek mogelijk.",
         type: "together",
         category: "group",
         icon: "shadow",
@@ -176,8 +176,8 @@ export const HUNTS = [
       },
       {
         id: "silliest",
-        title: "Find the silliest thing of the whole walk",
-        hint: "Take a vote. Silliness is serious business.",
+        title: "Vind het gekste ding van de hele wandeling",
+        hint: "Stem met z'n allen. Gek zijn is een serieuze zaak.",
         type: "find",
         category: "creative",
         icon: "star",
@@ -187,16 +187,16 @@ export const HUNTS = [
   },
   {
     id: "shapes",
-    title: "Colors & Shapes",
-    description: "Simple finds for sharp young eyes.",
+    title: "Kleuren & vormen",
+    description: "Makkelijke vondsten voor scherpe ogen.",
     theme: "shapes",
     accent: "#2f5c9a",
     mode: "open",
     challenges: [
       {
         id: "round",
-        title: "Find something round",
-        hint: "Wheels, stones, drain covers, buttons.",
+        title: "Vind iets ronds",
+        hint: "Wielen, stenen, putdeksels, knopen.",
         type: "find",
         category: "observation",
         icon: "circle",
@@ -204,8 +204,8 @@ export const HUNTS = [
       },
       {
         id: "yellow",
-        title: "Find something yellow",
-        hint: "Flowers, doors, raincoats, a front gate.",
+        title: "Vind iets felgeels",
+        hint: "Bloemen, deuren, regenjassen, een tuinhek.",
         type: "find",
         category: "observation",
         icon: "sun",
@@ -213,8 +213,8 @@ export const HUNTS = [
       },
       {
         id: "stripes",
-        title: "Find some stripes",
-        hint: "Lines side by side: fences, bricks, bark, railings.",
+        title: "Vind strepen",
+        hint: "Lijnen naast elkaar: hekjes, bakstenen, boomschors.",
         type: "find",
         category: "observation",
         icon: "stripes",
@@ -222,8 +222,8 @@ export const HUNTS = [
       },
       {
         id: "triangle",
-        title: "Find a triangle",
-        hint: "Roofs are a good place to start.",
+        title: "Vind een driehoek",
+        hint: "Daken zijn een goed begin.",
         type: "find",
         category: "observation",
         icon: "triangle",
@@ -231,8 +231,8 @@ export const HUNTS = [
       },
       {
         id: "tiny",
-        title: "Find something smaller than your thumb",
-        hint: "Put your thumb in the photo next to it.",
+        title: "Vind iets kleiner dan je duim",
+        hint: "Houd je duim ernaast op de foto.",
         type: "find",
         category: "observation",
         icon: "thumb",
@@ -240,8 +240,8 @@ export const HUNTS = [
       },
       {
         id: "heart",
-        title: "Find something shaped like a heart",
-        hint: "This one's tricky. Leaves, stones and puddles can surprise you.",
+        title: "Vind iets in de vorm van een hart",
+        hint: "Deze is lastig. Bladeren, stenen en plassen kunnen je verrassen.",
         type: "find",
         category: "creative",
         icon: "heart",
@@ -249,8 +249,8 @@ export const HUNTS = [
       },
       {
         id: "body-shape",
-        title: "Make a shape together",
-        hint: "A circle with your arms? A big letter with your bodies?",
+        title: "Maak samen een vorm",
+        hint: "Een cirkel met jullie armen? Een grote letter met jullie lijf?",
         type: "together",
         category: "group",
         icon: "people",
@@ -258,8 +258,8 @@ export const HUNTS = [
       },
       {
         id: "most-colorful",
-        title: "Find the most colorful thing on your walk",
-        hint: "Count the colors. Can you find one with five?",
+        title: "Vind het kleurigste ding van de wandeling",
+        hint: "Tel de kleuren. Vind je er vijf?",
         type: "find",
         category: "observation",
         icon: "palette",
@@ -269,16 +269,16 @@ export const HUNTS = [
   },
   {
     id: "magic",
-    title: "Magic Hunt",
-    description: "The ordinary world, looked at a little differently.",
+    title: "Magische speurtocht",
+    description: "De gewone wereld, net een beetje anders bekeken.",
     theme: "sparkle",
     accent: "#5c4a86",
     mode: "open",
     challenges: [
       {
         id: "wizard-stick",
-        title: "Find a wizard's stick",
-        hint: "Every wizard needs one. It should feel right in your hand.",
+        title: "Vind een toverstok",
+        hint: "Elke tovenaar heeft er een. Hij moet goed in je hand liggen.",
         type: "find",
         category: "imagination",
         icon: "wand",
@@ -286,8 +286,8 @@ export const HUNTS = [
       },
       {
         id: "fairy-door",
-        title: "Find a fairy door",
-        hint: "A little gap at the bottom of a tree. A crack in a wall.",
+        title: "Vind een feeëndeurtje",
+        hint: "Een gaatje onder aan een boom. Een kiertje in een muur.",
         type: "find",
         category: "imagination",
         icon: "door",
@@ -295,8 +295,8 @@ export const HUNTS = [
       },
       {
         id: "dragon",
-        title: "Find a hiding place for a tiny dragon",
-        hint: "Somewhere dark, cosy and just a little bit secret.",
+        title: "Vind een perfecte schuilplaats voor een draak",
+        hint: "Donker, knus en een beetje geheim.",
         type: "find",
         category: "imagination",
         icon: "dragon",
@@ -304,8 +304,8 @@ export const HUNTS = [
       },
       {
         id: "magic-tree",
-        title: "Find a magical tree",
-        hint: "What makes it magic? Tell each other.",
+        title: "Vind een toverboom",
+        hint: "Wat maakt hem magisch? Vertel het elkaar.",
         type: "find",
         category: "nature",
         icon: "tree",
@@ -313,8 +313,8 @@ export const HUNTS = [
       },
       {
         id: "sparkle",
-        title: "Find something that sparkles",
-        hint: "Raindrops, glass, a puddle catching the sky.",
+        title: "Vind iets dat schittert",
+        hint: "Regendruppels, glas, een plas waarin de lucht te zien is.",
         type: "find",
         category: "observation",
         icon: "sparkle",
@@ -322,8 +322,8 @@ export const HUNTS = [
       },
       {
         id: "portal",
-        title: "Find a secret portal",
-        hint: "An archway, a gap in a hedge, a tunnel of branches.",
+        title: "Vind een geheime doorgang",
+        hint: "Een boog, een gat in de heg, een tunnel van takken.",
         type: "find",
         category: "imagination",
         icon: "arch",
@@ -331,8 +331,8 @@ export const HUNTS = [
       },
       {
         id: "spell",
-        title: "Everyone, cast a spell",
-        hint: "Point your wizard sticks and freeze mid-spell.",
+        title: "Betover elkaar!",
+        hint: "Richt jullie toverstokken en bevries midden in de spreuk.",
         type: "together",
         category: "group",
         icon: "people",
@@ -340,8 +340,8 @@ export const HUNTS = [
       },
       {
         id: "magic-place",
-        title: "Find the place where the magic lives",
-        hint: "The most magical spot of the whole walk. Whisper when you find it.",
+        title: "Vind de plek waar de magie woont",
+        hint: "De meest magische plek van de wandeling. Fluister als je hem vindt.",
         type: "find",
         category: "imagination",
         icon: "moon",

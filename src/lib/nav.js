@@ -3,6 +3,7 @@
 //   "hunts"              choose a hunt
 //   "hunt"               the active hunt board
 //   "hunt/<id>"          a challenge, opened over the board
+//   "hunt/<id>/camera"   the in-app camera for that challenge
 //   "hunt/<id>/photo"    preview of a just-taken photo
 //   "recap"              the last finished hunt
 //
@@ -22,7 +23,12 @@ export function parseRoute(path = currentPath()) {
     case "hunts":
       return { name: "hunts" };
     case "hunt":
-      return { name: "board", challengeId: id || null, preview: Boolean(id && sub === "photo") };
+      return {
+        name: "board",
+        challengeId: id || null,
+        camera: Boolean(id && sub === "camera"),
+        preview: Boolean(id && sub === "photo"),
+      };
     case "recap":
       return { name: "recap" };
     default:
