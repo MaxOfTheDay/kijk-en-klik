@@ -1,4 +1,4 @@
-// Turns a camera/gallery file into two right-sized JPEGs:
+// Turns a camera frame (a canvas) or a gallery file into two right-sized JPEGs:
 //   full  — long edge 1600px, for the preview and the recap
 //   thumb — long edge 640px, for board cards
 // A modern phone photo (4–12 MB) ends up around 250–450 KB in total, so a
@@ -13,8 +13,9 @@ const THUMB_EDGE = 640;
 
 export class UnreadableImageError extends Error {}
 
-export async function processImage(file) {
-  const source = await decode(file);
+export async function processImage(input) {
+  const frame = input instanceof HTMLCanvasElement;
+  const source = frame ? input : await decode(input);
   try {
     const { width, height } = source;
     if (!width || !height) throw new UnreadableImageError("Empty image");
@@ -23,6 +24,7 @@ export async function processImage(file) {
     return { full: full.blob, thumb: thumb.blob, width: full.width, height: full.height };
   } finally {
     source.close?.();
+    if (frame) input.width = input.height = 0; // release memory early on iOS
   }
 }
 

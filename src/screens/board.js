@@ -58,7 +58,7 @@ export function mount(root, route, app) {
   const current = () => sheet.dataset.challenge;
 
   const camera = createCamera(cameraDialog, {
-    onCapture: (blob) => develop(blob, "live", current()),
+    onCapture: (frame) => develop(frame, "live", current()),
     onPick: () => pickAndDevelop(current(), { fromCamera: true }),
     onClose() {
       if (cameraDialog.dataset.quiet) return delete cameraDialog.dataset.quiet;

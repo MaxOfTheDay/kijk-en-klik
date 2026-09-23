@@ -70,7 +70,7 @@ function collage(items) {
       <li class="print ${wide ? "print--wide" : ""}" style="--tilt:${TILTS[i % TILTS.length]}deg; --i:${i}">
         <figure>
           <div class="print__photo" data-photo-frame>
-            <img alt="${esc(item.label)}" data-photo-id="${esc(item.photoId)}" data-photo-size="full">
+            <img alt="${esc(item.label)}" loading="lazy" data-photo-id="${esc(item.photoId)}" data-photo-size="full">
           </div>
           <figcaption>${esc(item.label)}</figcaption>
         </figure>
